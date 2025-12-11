@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -18,11 +19,12 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: "bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500",
-    secondary: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-200",
-    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-    ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-    outline: "bg-transparent border border-gray-300 text-gray-700 hover:border-gray-400"
+    // Corrected to use 'plasma' palette which matches tailwind.config
+    primary: "bg-plasma-600 text-white hover:bg-plasma-700 focus:ring-plasma-500 shadow-sm border border-transparent",
+    secondary: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-200 dark:bg-neutral-800 dark:text-gray-200 dark:border-neutral-700 dark:hover:bg-neutral-700",
+    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm border border-transparent",
+    ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white",
+    outline: "bg-transparent border border-gray-300 text-gray-700 hover:border-gray-400 dark:border-neutral-600 dark:text-gray-300 dark:hover:border-neutral-500"
   };
 
   const sizes = {

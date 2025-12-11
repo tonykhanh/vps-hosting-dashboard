@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { EntryScreen } from './components/EntryScreen';
 import { LandingPage } from './pages/LandingPage';
 import { Dashboard } from './pages/Dashboard';
+import { ProjectDetail } from './pages/ProjectDetail';
 import { ProjectCapsule } from './pages/ProjectCapsule';
 import { CreateProject } from './pages/CreateProject';
 import { Monitoring } from './pages/Monitoring';
@@ -233,10 +234,10 @@ const Layout = () => {
       {/* Main Content Area */}
       <main 
         className={`
-          flex-1 p-4 md:p-8 overflow-y-auto min-h-screen relative z-10 
+          flex-1 px-4 md:p-8 overflow-y-auto min-h-screen relative z-10 
           transition-[margin] duration-700 ease-out-expo
-          ml-0 pt-20
-          ${isSidebarExpanded ? 'md:ml-72' : 'md:ml-20'}
+          pt-20
+          ${isSidebarExpanded ? 'md:ml-72' : 'md:ml-0'}
           md:pt-8
         `}
       >
@@ -248,6 +249,7 @@ const Layout = () => {
             <Route path="/console" element={<Dashboard />} />
             <Route path="/console/create" element={<CreateProject />} />
             <Route path="/console/projects/:id" element={<ProjectCapsule />} />
+            <Route path="/console/capsule/:id" element={<ProjectCapsule />} />
             <Route path="/console/projects" element={<Projects />} />
             <Route path="/console/monitoring" element={<Monitoring />} />
             <Route path="/console/performance" element={<Performance />} />
