@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
 import { Sidebar } from './components/Sidebar';
