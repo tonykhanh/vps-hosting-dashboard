@@ -24,19 +24,23 @@ const SpatialCard = ({ children, className = "" }: { children?: React.ReactNode,
 const Typewriter: React.FC<{ text: string; delay?: number }> = ({ text, delay = 0 }) => {
   const [displayed, setDisplayed] = useState('');
   useEffect(() => {
-    let t: ReturnType<typeof setTimeout>;
-    const start = setTimeout(() => {
-      let i = 0;
-      const type = () => {
-        if (i < text.length) {
-          setDisplayed(prev => prev + text.charAt(i));
-          i++;
-          t = setTimeout(type, 30);
-        }
-      };
-      type();
-    }, delay);
-    return () => clearTimeout(start);
+    let timeoutId: number;
+    let charIndex = 0;
+
+    const type = () => {
+      if (charIndex < text.length) {
+        setDisplayed(prev => prev + text.charAt(charIndex));
+        charIndex++;
+        timeoutId = window.setTimeout(type, 30);
+      }
+    };
+
+    const startTimeout = window.setTimeout(type, delay);
+
+    return () => {
+      window.clearTimeout(startTimeout);
+      window.clearTimeout(timeoutId);
+    };
   }, [text, delay]);
   return <span className="font-mono text-neon-mint">{displayed}</span>;
 };

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+// --- Theme Context ---
 export type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
@@ -15,8 +16,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('nebula-theme');
-    return (saved as Theme) || 'system';
+    try {
+      const saved = localStorage.getItem('nebula-theme');
+      return (saved as Theme) || 'system';
+    } catch (e) {
+      return 'system';
+    }
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,7 +37,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.add(theme);
     }
     
-    localStorage.setItem('nebula-theme', theme);
+    try {
+      localStorage.setItem('nebula-theme', theme);
+    } catch (e) {
+      // Ignore storage errors
+    }
   }, [theme]);
 
   const login = () => setIsAuthenticated(true);
@@ -54,13 +63,20 @@ export const useTheme = () => {
 };
 
 // --- Router Shim ---
+// A simple hash-based router to avoid Vercel/SPA routing issues without server config
 const RouterContext = createContext<{ path: string; navigate: (to: string) => void }>({ 
   path: '/', 
   navigate: () => {} 
 });
 
 export const HashRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [path, setPath] = useState(window.location.hash.slice(1) || '/');
+  const [path, setPath] = useState(() => {
+      try {
+          return window.location.hash.slice(1) || '/';
+      } catch (e) {
+          return '/';
+      }
+  });
 
   useEffect(() => {
     const handler = () => {
@@ -73,7 +89,6 @@ export const HashRouter: React.FC<{ children: React.ReactNode }> = ({ children }
   }, []);
 
   const navigate = (to: string) => {
-    // Manually set hash to trigger hashchange event
     window.location.hash = to;
   };
 
@@ -99,8 +114,8 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return;
       }
       
-      // Wildcard match (e.g. /console/*)
-      if (routePath.endsWith('/*')) {
+      // Wildcard match
+      if (routePath && routePath.endsWith('/*')) {
         const base = routePath.replace('/*', '');
         if (path.startsWith(base)) {
           matchedElement = element;
@@ -108,11 +123,10 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }
       }
       
-      // Parameter match (e.g. /console/projects/:id)
-      if (routePath.includes('/:')) {
+      // Parameter match
+      if (routePath && routePath.includes('/:')) {
         const base = routePath.split('/:')[0];
-        // Check if path starts with base and has something after it
-        if (path.startsWith(base) && path.length > base.length) {
+        if (path.startsWith(base)) {
            matchedElement = element;
            return;
         }
@@ -120,7 +134,7 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     }
   });
   
-  return matchedElement;
+  return matchedElement || null;
 };
 
 export const Route: React.FC<{ path: string, element: React.ReactNode }> = () => null;
@@ -135,24 +149,14 @@ export const Link: React.FC<any> = ({ to, children, className, onClick, ...props
   const { navigate } = useContext(RouterContext);
 
   const handleClick = (e: React.MouseEvent) => {
-    // CRITICAL: Strictly prevent default to avoid 'refused to connect' issues in iframes/sandboxes
     e.preventDefault();
-    // Stop propagation to prevent any parent handlers from triggering navigation
     e.stopPropagation();
-    
     if (onClick) onClick(e);
     navigate(to);
   };
 
   return (
-    <a 
-      href={`#${to}`} 
-      className={className} 
-      onClick={handleClick}
-      target="_self"
-      role="link"
-      {...props}
-    >
+    <a href={`#${to}`} className={className} onClick={handleClick} {...props}>
       {children}
     </a>
   );
