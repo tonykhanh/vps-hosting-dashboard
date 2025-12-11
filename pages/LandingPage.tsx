@@ -203,7 +203,7 @@ export const LandingPage: React.FC = () => {
                    </div>
 
                    <div className="mt-auto pt-4 border-t border-white/5 text-gray-500 text-xs">
-                      > <Typewriter text="Action Graph ready. Press Enter to execute." delay={2000} />
+                      <Typewriter text="Action Graph ready. Press Enter to execute." delay={2000} />
                       <span className="animate-pulse ml-1">_</span>
                    </div>
                 </div>
