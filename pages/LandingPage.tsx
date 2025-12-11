@@ -180,7 +180,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="p-6 h-[400px] font-mono text-sm flex flex-col gap-4 relative z-10">
                    <div className="flex gap-3">
-                      <span className="text-plasma-400">➜</span>
+                      <span className="text-plasma-400">&gt;</span>
                       <span className="text-white">describe intent</span>
                    </div>
                    <div className="p-4 bg-white/5 rounded-xl border-l-2 border-plasma-500 text-gray-300 italic leading-relaxed">
