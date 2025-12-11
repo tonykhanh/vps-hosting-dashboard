@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Disc, Plus, CheckCircle2, Trash2, X, Upload, Globe, Download, MoreVertical } from 'lucide-react';
 import { Button } from '../../Button';
 import { IMAGES } from '../../../constants';
@@ -123,7 +124,7 @@ export const IsoManager: React.FC = () => {
        </div>
 
        {/* Add ISO Modal */}
-      {showAddISOModal && (
+      {showAddISOModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
            <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col">
               
@@ -185,7 +186,8 @@ export const IsoManager: React.FC = () => {
                  </Button>
               </div>
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

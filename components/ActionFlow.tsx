@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   CheckCircle2, Circle, Loader2, XCircle, 
   ArrowRight, ShieldCheck, AlertTriangle, 
@@ -126,8 +127,8 @@ export const ActionFlow: React.FC<ActionFlowProps> = ({ isOpen, type, onClose, p
   const config = ACTION_CONFIGS[type];
   const Icon = config.icon;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-end">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-neutral-900/30 backdrop-blur-sm transition-opacity" 
@@ -252,6 +253,7 @@ export const ActionFlow: React.FC<ActionFlowProps> = ({ isOpen, type, onClose, p
         </div>
         
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

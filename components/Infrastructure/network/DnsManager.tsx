@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Globe, Edit2, Trash2, Plus, ArrowLeft, Save, 
   X, MoreVertical, RotateCcw, Settings, CheckCircle2, Zap
@@ -222,7 +223,7 @@ export const DnsManager: React.FC = () => {
         </div>
 
         {/* Add Domain Modal */}
-        {showAddDomainModal && (
+        {showAddDomainModal && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
              <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col scale-100 animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-neutral-700">
                 <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
@@ -279,7 +280,8 @@ export const DnsManager: React.FC = () => {
                    </Button>
                 </div>
              </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     );
@@ -387,7 +389,7 @@ export const DnsManager: React.FC = () => {
       </div>
 
       {/* Add/Edit Record Modal */}
-      {showRecordModal && (
+      {showRecordModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
            <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col scale-100 animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-neutral-700">
               <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
@@ -468,7 +470,8 @@ export const DnsManager: React.FC = () => {
                  </Button>
               </div>
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

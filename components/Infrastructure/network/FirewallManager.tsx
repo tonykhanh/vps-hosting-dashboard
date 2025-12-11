@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Shield, Plus, MoreVertical, Edit2, Trash2, X, Save } from 'lucide-react';
 import { Button } from '../../Button';
 import { FIREWALL_LIST } from '../../../constants';
@@ -122,7 +123,7 @@ export const FirewallManager: React.FC = () => {
        </div>
 
        {/* Create Modal */}
-       {showAddModal && (
+       {showAddModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
            <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col scale-100 animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-neutral-700">
               <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
@@ -157,7 +158,8 @@ export const FirewallManager: React.FC = () => {
                  </Button>
               </div>
            </div>
-        </div>
+        </div>,
+        document.body
        )}
     </div>
   );

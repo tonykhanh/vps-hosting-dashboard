@@ -1,4 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Box, Check, Search, Info, Globe } from 'lucide-react';
 import { Button } from '../../Button';
 import { LOCATIONS, REGIONS } from '../../../constants';
@@ -62,7 +64,7 @@ export const CreateBucketModal: React.FC<CreateBucketModalProps> = ({ onClose })
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-neutral-900 w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-200 dark:border-neutral-700">
         
@@ -231,6 +233,7 @@ export const CreateBucketModal: React.FC<CreateBucketModalProps> = ({ onClose })
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

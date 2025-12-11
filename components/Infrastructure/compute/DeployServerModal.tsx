@@ -1,5 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, Plus, CheckCircle2, ChevronRight, ChevronLeft, Minus, Search, 
   Check, Key, FileCode, Shield, Info, Server, Cpu 
@@ -76,8 +76,8 @@ export const DeployServerModal: React.FC<DeployServerModalProps> = ({ onClose })
     }));
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center backdrop-blur-md md:p-4 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center backdrop-blur-md md:p-4 animate-in fade-in duration-200">
        <div className="bg-white dark:bg-neutral-900 w-full md:max-w-7xl h-full md:h-[90vh] md:rounded-3xl shadow-2xl overflow-hidden flex flex-col border-t md:border border-gray-200 dark:border-neutral-700">
           
           {/* Modal Header */}
@@ -597,6 +597,7 @@ export const DeployServerModal: React.FC<DeployServerModalProps> = ({ onClose })
 
           </div>
        </div>
-    </div>
+    </div>,
+    document.body
   );
 };

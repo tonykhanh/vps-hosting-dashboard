@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Key, Plus, Trash2, X, MoreVertical } from 'lucide-react';
 import { Button } from '../../Button';
 
@@ -92,7 +93,7 @@ export const SshKeyManager: React.FC = () => {
        </div>
 
        {/* Add SSH Key Modal */}
-      {showAddSSHModal && (
+      {showAddSSHModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
            <div className="bg-white dark:bg-neutral-900 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col">
               <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
@@ -135,7 +136,8 @@ export const SshKeyManager: React.FC = () => {
                  </Button>
               </div>
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Zap, Plus, MoreVertical, Play, Square, 
   Activity, Clock, Box, X, Code, CheckCircle2 
@@ -168,8 +169,8 @@ export const ServerlessManager: React.FC = () => {
        </div>
 
        {/* Create Modal */}
-       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+       {showCreateModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
            <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
                  <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
@@ -238,7 +239,8 @@ export const ServerlessManager: React.FC = () => {
                  </Button>
               </div>
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
