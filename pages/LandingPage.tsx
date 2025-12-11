@@ -12,7 +12,7 @@ import { Navbar } from '../components/Navbar';
 
 // --- Components ---
 
-const SpatialCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
+const SpatialCard = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => {
   return (
     <div className={`relative group p-8 rounded-[2rem] bg-white/5 dark:bg-white/5 border border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 overflow-hidden shadow-glass hover:shadow-spatial-card ${className}`}>
       <div className="absolute inset-0 bg-gradient-to-br from-plasma-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
