@@ -120,8 +120,8 @@ export const ProjectCapsule: React.FC = () => {
               
               {isProvisioning && (
                 <div className="text-xs text-amber-600 dark:text-amber-400 font-mono">
-                  > Allocating IP address...<br/>
-                  > Mounting volumes...
+                   Allocating IP address...<br/>
+                   Mounting volumes...
                 </div>
               )}
 
