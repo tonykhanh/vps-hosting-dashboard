@@ -3,9 +3,9 @@ import React from 'react';
 
 export const CircuitBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.15 }) => {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none bg-graphite-950">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
       {/* 1. Gradient Haze (Deep Space Atmosphere) */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-plasma-900/30 via-graphite-950 to-graphite-950"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-plasma-900/20 via-transparent to-transparent"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent"></div>
       
       {/* 2. Holographic Grid Surface (Perspective Plane) */}
