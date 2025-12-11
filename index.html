@@ -82,6 +82,7 @@
               'boot-load': 'bootLoad 1.5s ease-out forwards',
               'spatial-entry': 'spatialEntry 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
               'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+              'circuit-flow': 'circuitFlow 3s linear infinite',
             },
             keyframes: {
               float: {
@@ -107,6 +108,10 @@
               fadeInUp: {
                 '0%': { opacity: '0', transform: 'translateY(20px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              circuitFlow: {
+                '0%': { strokeDashoffset: '1000' },
+                '100%': { strokeDashoffset: '0' }
               }
             },
             backgroundImage: {
@@ -179,6 +184,23 @@
       .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+      }
+
+      /* Circuit Animation Classes */
+      .circuit-path {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: circuitFlow 3s linear infinite;
+      }
+      .circuit-path-slow {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: circuitFlow 5s linear infinite;
+      }
+      .circuit-path-fast {
+        stroke-dasharray: 500;
+        stroke-dashoffset: 500;
+        animation: circuitFlow 1.5s linear infinite;
       }
     </style>
   <script type="importmap">

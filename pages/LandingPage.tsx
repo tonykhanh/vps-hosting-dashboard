@@ -9,6 +9,7 @@ import {
   CreditCard, Layout
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
+import { CircuitBackground } from '../components/CircuitBackground';
 
 // --- Components ---
 
@@ -116,8 +117,13 @@ export const LandingPage: React.FC = () => {
 
       {/* Background Ambient */}
       <div className="fixed inset-0 z-0 pointer-events-none">
+         {/* New Circuit Background Effect */}
+         <CircuitBackground opacity={0.1} />
+         
          <div className="absolute top-[-20%] left-[20%] w-[800px] h-[800px] bg-plasma-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
          <div className="absolute bottom-[-20%] right-[10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[100px] animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+         
+         {/* 3D Perspective Grid */}
          <div className="absolute inset-0 bg-spatial-grid opacity-10" style={{ transform: 'perspective(1000px) rotateX(10deg)' }}></div>
       </div>
 

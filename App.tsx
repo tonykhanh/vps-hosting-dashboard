@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
 import { Sidebar } from './components/Sidebar';
@@ -26,6 +27,7 @@ import { VPS } from './pages/VPS';
 import { Domains } from './pages/Domains';
 import { NetworkPage } from './pages/Network';
 import { Storage } from './pages/Storage';
+import { AICopilot } from './components/AICopilot';
 import { ThemeProvider } from './context/ThemeContext';
 import { Menu, Hexagon } from 'lucide-react';
 
@@ -231,6 +233,9 @@ const Layout = () => {
         onMobileClose={() => setIsMobileMenuOpen(false)}
       />
       
+      {/* AI Copilot Overlay (Global Subsystem) */}
+      <AICopilot />
+
       {/* Main Content Area */}
       <main 
         className={`
