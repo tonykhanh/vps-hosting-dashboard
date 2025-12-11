@@ -231,7 +231,7 @@ export const AIInsights: React.FC = () => {
               <div className="space-y-2">
                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                     <CheckCircle2 size={14} className="text-green-500" />
-                    <span>Scaled DB Read Replicas (2 -> 3)</span>
+                    <span>Scaled DB Read Replicas (2 &rarr; 3)</span>
                     <span className="text-xs text-gray-400 ml-auto flex items-center gap-1"><Clock size={10}/> 2h ago</span>
                  </div>
                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
