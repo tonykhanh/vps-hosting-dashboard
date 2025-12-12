@@ -133,7 +133,7 @@ export const CreateProject: React.FC = () => {
 
       <div className={`
         w-full max-w-5xl h-[85vh] bg-white/80 dark:bg-[#080808]/80 backdrop-blur-2xl shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden relative transition-all duration-500
-        ${isSuccess ? 'border-0' : 'border border-white/60 dark:border-white/10'}
+        ${isSuccess ? 'border-0' : ''}
       `}>
         
         {/* Top Progress Bar */}
@@ -380,7 +380,7 @@ export const CreateProject: React.FC = () => {
                        </div>
                     </div>
                  ) : (
-                    <div className="text-center space-y-8 animate-in zoom-in duration-500">
+                    <div className="text-center space-y-8 animate-in zoom-in duration-500 border-none">
                        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(34,197,94,0.4)]">
                           <Check size={48} className="text-white" strokeWidth={3} />
                        </div>
