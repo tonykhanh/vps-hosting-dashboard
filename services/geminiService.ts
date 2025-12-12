@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `You are Autonix, an Autonomous Cloud Ops AI (2030 Edition).
 Your role is to interpret user intent into infrastructure actions ("Action Graphs").
@@ -51,5 +52,66 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
   } catch (error) {
     console.error("Autonix AI Error:", error);
     return "Error communicating with the Action Graph Engine. Check console for details.";
+  }
+};
+
+// Types for the intent analysis
+export interface IntentAnalysisResult {
+  blueprintId: string;
+  name: string;
+  domain: string;
+  region: string;
+  reasoning: string;
+}
+
+export const analyzeInfrastructureIntent = async (intent: string): Promise<IntentAnalysisResult | null> => {
+  if (!ai) {
+    console.warn("Autonix AI: No API Key found.");
+    return null;
+  }
+
+  const prompt = `Analyze the following user intent for deploying cloud infrastructure. 
+  Map it to the closest available options.
+  
+  Available Blueprints (blueprintId): 
+  - 'WORDPRESS' (for e-commerce, shops, blogs, content sites)
+  - 'NODEJS' (for APIs, backends, javascript apps)
+  - 'LARAVEL' (for php apps, enterprise)
+  - 'STATIC' (for landing pages, portfolios, simple sites)
+  - 'DOCKER' (for containers, microservices)
+
+  Available Regions (region): 'sg-1' (Singapore/Asia), 'vn-1' (Vietnam), 'jp-1' (Japan), 'us-west' (USA). Default to 'sg-1' if unsure.
+
+  User Intent: "${intent}"
+  
+  Generate a creative Project Name and Domain if not specified.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            blueprintId: { type: Type.STRING },
+            name: { type: Type.STRING },
+            domain: { type: Type.STRING },
+            region: { type: Type.STRING },
+            reasoning: { type: Type.STRING }
+          },
+          required: ["blueprintId", "name", "domain", "region"]
+        }
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as IntentAnalysisResult;
+    }
+    return null;
+  } catch (error) {
+    console.error("Autonix Intent Analysis Error:", error);
+    return null;
   }
 };

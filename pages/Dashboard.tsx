@@ -5,6 +5,7 @@ import { useProjects } from '../context/ProjectContext';
 import { IntentConsole } from '../components/Workspace/IntentConsole';
 import { ActiveCapsuleGrid } from '../components/Workspace/ActiveCapsuleGrid';
 import { Box } from 'lucide-react';
+import { analyzeInfrastructureIntent } from '../services/geminiService';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -15,12 +16,28 @@ export const Dashboard: React.FC = () => {
   // Filter projects for the "Capsule Workspace" (removing the placeholder 'p-new' if it exists in mock)
   const activeProjects = projects.filter(p => p.id !== 'p-new');
 
-  const triggerMorphTransition = () => {
+  const triggerMorphTransition = async () => {
+    if (!intent.trim()) return;
+    
     setIsMorphing(true);
-    // Simulate "Graph Compilation" before navigation
-    setTimeout(() => {
-      navigate('/console/projects/p-new');
-    }, 1500);
+    
+    try {
+      // Analyze intent with Gemini
+      const aiConfig = await analyzeInfrastructureIntent(intent);
+      
+      // Artificial delay for the "morphing" visual effect if the API is too fast
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (aiConfig) {
+        navigate('/console/create', { state: { aiConfig } });
+      } else {
+        // Fallback if AI fails
+        navigate('/console/create');
+      }
+    } catch (error) {
+      console.error("Intent processing failed", error);
+      navigate('/console/create');
+    }
   };
 
   return (

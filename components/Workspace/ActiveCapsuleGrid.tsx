@@ -37,7 +37,7 @@ export const ActiveCapsuleGrid: React.FC<ActiveCapsuleGridProps> = ({ projects, 
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
             <Box size={14}/> Active Capsules
         </h2>
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent flex-1 mx-8 opacity-30"></div>
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent flex-1 mx-8 opacity-50 dark:opacity-30"></div>
         <span className="text-xs text-gray-500 font-mono tracking-widest">
              SYSTEM_HEALTH <span className="text-emerald-500">98%</span>
         </span>
@@ -49,24 +49,24 @@ export const ActiveCapsuleGrid: React.FC<ActiveCapsuleGridProps> = ({ projects, 
           <ProjectCard 
             key={project.id} 
             project={project} 
-            onEdit={handleEdit}
+            onEdit={handleEdit} 
             onDelete={handleDelete}
             onUpdateStatus={handleUpdateStatus}
           />
         ))}
         
-        {/* "Add New" Spatial Placeholder - Matches the screenshot style */}
+        {/* "Add New" Spatial Placeholder */}
         <div 
           onClick={onCreateClick}
-          className="group relative min-h-[260px] rounded-[1.5rem] border-2 border-dashed border-[#333] dark:border-white/10 hover:border-plasma-500/50 hover:bg-[#111] dark:hover:bg-white/[0.02] flex flex-col items-center justify-center gap-6 cursor-pointer transition-all duration-300"
+          className="group relative min-h-[260px] rounded-[1.5rem] border-2 border-dashed bg-gray-50 border-gray-300 hover:bg-plasma-50 hover:border-plasma-500 hover:shadow-xl hover:shadow-plasma-500/10 dark:bg-[#0f0f0f] dark:border-white/10 dark:hover:border-plasma-500/50 dark:hover:bg-[#141414] flex flex-col items-center justify-center gap-6 cursor-pointer transition-all duration-300"
         >
-          <div className="w-16 h-16 rounded-full bg-[#1c1c1c] dark:bg-white/5 border border-[#333] dark:border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:border-plasma-500/30 transition-all duration-300">
-            <Plus size={24} className="text-gray-500 group-hover:text-plasma-500 transition-colors" />
+          <div className="w-16 h-16 rounded-full bg-white border border-gray-200 group-hover:border-plasma-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-plasma-500/20 dark:bg-white/5 dark:border-white/10 dark:group-hover:border-plasma-500/30 flex items-center justify-center transition-all duration-300">
+            <Plus size={24} className="text-gray-400 group-hover:text-plasma-600 transition-colors" />
           </div>
           
           <div className="text-center">
-             <h3 className="font-bold text-gray-400 group-hover:text-white text-lg transition-colors">Initialize New Capsule</h3>
-             <p className="text-xs text-gray-600 mt-2 font-mono">
+             <h3 className="font-bold text-gray-500 group-hover:text-plasma-700 dark:text-gray-400 dark:group-hover:text-white text-lg transition-colors">Initialize New Capsule</h3>
+             <p className="text-xs text-gray-400 group-hover:text-plasma-600/70 dark:text-gray-600 dark:group-hover:text-gray-500 mt-2 font-mono">
                Deploy from Blueprint
              </p>
           </div>

@@ -94,7 +94,7 @@ export const IntentConsole: React.FC<IntentConsoleProps> = ({
                 </div>
               </div>
               <div className="mt-4 text-center">
-                <span className="text-xs text-gray-400">Press <strong className="text-white">Enter</strong> to materialize this graph.</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Press <strong className="text-gray-900 dark:text-white">Enter</strong> to materialize this graph.</span>
               </div>
           </div>
         )}

@@ -65,9 +65,11 @@ export const useTheme = () => {
 // --- Router Shim (History API Version) ---
 const RouterContext = createContext<{ 
   path: string; 
-  navigate: (to: string, options?: { replace?: boolean }) => void 
+  state: any;
+  navigate: (to: string, options?: { replace?: boolean; state?: any }) => void 
 }>({ 
   path: '/', 
+  state: null,
   navigate: () => {} 
 });
 
@@ -80,32 +82,42 @@ export const BrowserRouter: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  const [state, setState] = useState(() => {
+    try {
+      return window.history.state;
+    } catch {
+      return null;
+    }
+  });
+
   useEffect(() => {
     const handler = () => {
        try {
          setPath(window.location.pathname);
+         setState(window.history.state);
        } catch {}
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
-  const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
+  const navigate = useCallback((to: string, options?: { replace?: boolean; state?: any }) => {
     try {
       if (options?.replace) {
-        window.history.replaceState({}, '', to);
+        window.history.replaceState(options.state || null, '', to);
       } else {
-        window.history.pushState({}, '', to);
+        window.history.pushState(options.state || null, '', to);
       }
     } catch (e) {
       // Ignore security errors in sandboxed environments (e.g. iframe/blob)
       console.warn('Navigation URL update prevented by environment:', e);
     }
     setPath(to);
+    setState(options?.state || null);
   }, []);
 
   return (
-    <RouterContext.Provider value={{ path, navigate }}>
+    <RouterContext.Provider value={{ path, state, navigate }}>
       {children}
     </RouterContext.Provider>
   );
@@ -198,8 +210,8 @@ export const Link: React.FC<any> = ({ to, children, className, onClick, ...props
 };
 
 export const useLocation = () => {
-  const { path } = useContext(RouterContext);
-  return { pathname: path };
+  const { path, state } = useContext(RouterContext);
+  return { pathname: path, state };
 };
 
 export const useNavigate = () => {
