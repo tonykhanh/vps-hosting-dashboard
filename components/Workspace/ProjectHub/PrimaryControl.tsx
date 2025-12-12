@@ -17,6 +17,43 @@ export const PrimaryControl: React.FC<PrimaryControlProps> = ({ project, isProvi
   const isStopped = project.status === ProjectStatus.STOPPED;
   const isBuilding = project.status === ProjectStatus.BUILDING;
 
+  // Determine the content for the status/insight box
+  const renderStatusContent = () => {
+    if (isProvisioning) {
+      return (
+        <div className="flex flex-col items-center justify-center py-2">
+           <Loader2 size={24} className="text-blue-400 animate-spin mb-2" />
+           <p className="text-blue-200 text-sm font-medium">AI is configuring your blueprint...</p>
+        </div>
+      );
+    }
+    if (isBuilding) {
+      return (
+        <div className="flex flex-col items-center justify-center py-2">
+           <Loader2 size={24} className="text-amber-400 animate-spin mb-2" />
+           <p className="text-amber-200 text-sm font-medium">Re-compiling Infrastructure...</p>
+        </div>
+      );
+    }
+    if (isStopped) {
+      return (
+        <div className="text-center text-gray-500 dark:text-gray-400 py-1">
+           <p className="text-sm">Capsule is dormant. Resources are hibernated.</p>
+        </div>
+      );
+    }
+    // Default Running State (AI Prediction)
+    return (
+      <>
+        <div className="absolute top-0 right-0 p-2 opacity-20"><Sparkles /></div>
+        <h4 className="text-xs text-neon-mint font-bold uppercase tracking-wider mb-1">AI Prediction</h4>
+        <p className="text-sm text-gray-300 leading-relaxed">
+          Traffic is expected to spike by <span className="text-white font-bold">~20%</span> in the next 12 hours based on historical trends.
+        </p>
+      </>
+    );
+  };
+
   return (
     <div className="relative z-20 transform transition-all duration-500 order-1 lg:order-2">
       <Capsule 
@@ -54,31 +91,15 @@ export const PrimaryControl: React.FC<PrimaryControlProps> = ({ project, isProvi
             </div>
           </div>
 
-          {/* Status Message */}
-          {isProvisioning && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-blue-800 dark:text-blue-300 text-sm text-center">
-                AI is configuring your blueprint...
-              </div>
-          )}
-          {isBuilding && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl p-4 text-amber-800 dark:text-amber-300 text-sm text-center">
-                <Loader2 size={16} className="animate-spin inline mr-2"/> Re-compiling Infrastructure...
-              </div>
-          )}
-          {isStopped && (
-              <div className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 text-gray-600 dark:text-gray-400 text-sm text-center">
-                Capsule is dormant. Resources are hibernated.
-              </div>
-          )}
-          {!isProvisioning && !isStopped && !isBuilding && (
-            <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 rounded-xl p-4 text-white relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 p-2 opacity-20"><Sparkles /></div>
-              <h4 className="text-xs text-neon-mint font-bold uppercase tracking-wider mb-1">AI Prediction</h4>
-              <p className="text-sm text-gray-300 leading-relaxed">
-                Traffic is expected to spike by <span className="text-white font-bold">~20%</span> in the next 12 hours based on historical trends.
-              </p>
-            </div>
-          )}
+          {/* Unified Status Container */}
+          <div className={`
+            rounded-xl p-4 relative overflow-hidden shadow-lg transition-all duration-500 min-h-[100px] flex flex-col justify-center
+            ${isStopped 
+               ? 'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10' 
+               : 'bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 text-white'}
+          `}>
+             {renderStatusContent()}
+          </div>
         </div>
 
         {/* Global Actions */}
@@ -103,8 +124,8 @@ export const PrimaryControl: React.FC<PrimaryControlProps> = ({ project, isProvi
                  {isBuilding ? 'Building...' : 'Redeploy'}
                </Button>
                <Button 
-                 variant="secondary" 
-                 className="w-full border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:bg-transparent"
+                 variant="danger" 
+                 className="w-full shadow-lg shadow-red-500/20"
                  onClick={() => onAction('STOP')}
                  disabled={isProvisioning || isBuilding}
                >

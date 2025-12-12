@@ -95,26 +95,30 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDel
            </div>
 
            {/* Metrics Block (The inner dark container) */}
-           <div className="mt-6 bg-[#1a1a1a] dark:bg-white/[0.03] rounded-2xl p-4 border border-[#2a2a2a] dark:border-white/5 grid grid-cols-3 divide-x divide-[#333] dark:divide-white/10">
-              <div className="flex flex-col items-center justify-center px-2">
-                 <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">CPU</span>
-                 <div className="flex items-center gap-1.5 text-gray-200 font-bold">
-                    <Zap size={14} className={isRunning ? "text-amber-400" : "text-gray-600"} fill={isRunning ? "currentColor" : "none"} />
-                    {isRunning ? Math.round(cpuVal) : 0}%
+           <div className="mt-6 bg-[#1a1a1a] dark:bg-white/[0.03] rounded-2xl p-4 border border-[#2a2a2a] dark:border-white/5 grid grid-cols-1 gap-3">
+              <div>
+                 <div className="flex justify-between text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">
+                    <span>CPU Load</span>
+                    <span className={isRunning ? "text-gray-300" : "text-gray-600"}>{isRunning ? Math.round(cpuVal) : 0}%</span>
+                 </div>
+                 <div className="w-full h-1.5 bg-[#222] dark:bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${isRunning ? 'bg-plasma-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]' : 'bg-gray-600'}`} 
+                        style={{ width: `${isRunning ? Math.max(5, cpuVal) : 0}%` }}
+                    />
                  </div>
               </div>
-              <div className="flex flex-col items-center justify-center px-2">
-                 <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">RAM</span>
-                 <div className="flex items-center gap-1.5 text-gray-200 font-bold">
-                    <HardDrive size={14} className={isRunning ? "text-indigo-400" : "text-gray-600"} />
-                    {isRunning ? Math.round(ramVal) : 0}%
+              
+              <div>
+                 <div className="flex justify-between text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">
+                    <span>RAM Usage</span>
+                    <span className={isRunning ? "text-gray-300" : "text-gray-600"}>{isRunning ? Math.round(ramVal) : 0}%</span>
                  </div>
-              </div>
-              <div className="flex flex-col items-center justify-center px-2">
-                 <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">REGION</span>
-                 <div className="flex items-center gap-1.5 text-gray-200 font-bold">
-                    <Cloud size={14} className="text-blue-400" />
-                    {project.region.toUpperCase()}
+                 <div className="w-full h-1.5 bg-[#222] dark:bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${isRunning ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-600'}`} 
+                        style={{ width: `${isRunning ? Math.max(5, ramVal) : 0}%` }}
+                    />
                  </div>
               </div>
            </div>
