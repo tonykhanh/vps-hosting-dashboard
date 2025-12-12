@@ -29,6 +29,7 @@ import { NetworkPage } from './pages/Network';
 import { Storage } from './pages/Storage';
 import { AICopilot } from './components/AICopilot';
 import { ThemeProvider } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { Menu, Hexagon } from 'lucide-react';
 import { CircuitBackground } from './components/CircuitBackground';
 
@@ -177,21 +178,23 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <LocationEnforcer />
-        <GlobalMouseEffects />
-        <Routes>
-          {/* Public Landing Page */}
-          <Route path="/" element={<LandingPage />} />
-          
-          {/* Entry Sequence */}
-          <Route path="/entry" element={<EntryRoute />} />
-          
-          {/* Protected Console Routes */}
-          <Route path="/console/*" element={<ConsoleGuard />} />
+        <ProjectProvider>
+          <LocationEnforcer />
+          <GlobalMouseEffects />
+          <Routes>
+            {/* Public Landing Page */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Entry Sequence */}
+            <Route path="/entry" element={<EntryRoute />} />
+            
+            {/* Protected Console Routes */}
+            <Route path="/console/*" element={<ConsoleGuard />} />
 
-          {/* Catch-all Redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch-all Redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ProjectProvider>
       </BrowserRouter>
     </ThemeProvider>
   );

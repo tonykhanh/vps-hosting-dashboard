@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from '../context/ThemeContext';
+import { useProjects } from '../context/ProjectContext';
 import { Button } from '../components/Button';
 import { BLUEPRINTS } from '../constants';
-import { Blueprint, BlueprintType } from '../types';
+import { Blueprint, BlueprintType, Project, ProjectStatus } from '../types';
 import { Check, ChevronRight, Server, Globe, ShieldCheck, Box, ArrowLeft, Loader2, Cpu } from 'lucide-react';
 
 const steps = ['Select Blueprint', 'Configure', 'Review', 'Deploy'];
 
 export const CreateProject: React.FC = () => {
   const navigate = useNavigate();
+  const { addProject } = useProjects();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedBlueprint, setSelectedBlueprint] = useState<Blueprint | null>(null);
   const [formData, setFormData] = useState({
@@ -39,6 +41,28 @@ export const CreateProject: React.FC = () => {
     setIsDeploying(true);
     // Simulate deployment delay
     setTimeout(() => {
+      // Create new Project Object
+      if (selectedBlueprint) {
+        const newProject: Project = {
+          id: `p-${Date.now()}`,
+          name: formData.name,
+          domain: formData.domain,
+          blueprint: selectedBlueprint.id,
+          status: ProjectStatus.PROVISIONING, // Start as provisioning
+          region: formData.region,
+          ip: 'Allocating...',
+          createdAt: new Date().toISOString(),
+          healthScore: 100,
+          metrics: {
+            cpu: [],
+            memory: [],
+            network: [],
+          }
+        };
+        
+        addProject(newProject);
+      }
+
       setIsDeploying(false);
       navigate('/console');
     }, 3000);
