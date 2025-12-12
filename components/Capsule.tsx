@@ -37,18 +37,22 @@ export const Capsule: React.FC<CapsuleProps> = ({
   // Inner styles (the visual box with overflow hidden)
   const primaryInner = `
     bg-white dark:bg-[#050505] 
+    text-gray-900 dark:text-gray-100
     backdrop-blur-3xl 
     border-2 border-white/80 dark:border-white/20 
     shadow-2xl dark:shadow-spatial
+    transition-colors duration-500
   `;
 
   const satelliteInner = `
     bg-white/95 dark:bg-[#0A0A0A]/90 
+    text-gray-700 dark:text-gray-300
     backdrop-blur-2xl 
     border 
     ${activeStatusStyle}
     group-hover:bg-white dark:group-hover:bg-black
-    group-hover:shadow-xl transition-all duration-300
+    group-hover:shadow-xl 
+    transition-all duration-300
   `;
 
   // Wrapper styles (layout & positioning & hover transforms)
@@ -68,7 +72,7 @@ export const Capsule: React.FC<CapsuleProps> = ({
     >
       {/* AI Insight Badge - Floating OUTSIDE the overflow-hidden container */}
       {aiInsight && (
-        <div className="absolute -top-3 right-6 z-50 bg-gradient-to-r from-plasma-600 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-plasma-500/20 flex items-center gap-1 animate-float whitespace-nowrap border border-white/20 pointer-events-none">
+        <div className="absolute -top-3 right-6 z-50 bg-gradient-to-r from-plasma-600 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-plasma-500/20 flex items-center gap-1 animate-float whitespace-nowrap border border-white/20 pointer-events-none transition-transform duration-300">
           <Sparkles size={10} className="text-yellow-200" />
           {aiInsight}
         </div>
@@ -81,16 +85,16 @@ export const Capsule: React.FC<CapsuleProps> = ({
         ${isExpanded ? 'ring-2 ring-plasma-400 ring-offset-2 dark:ring-offset-black bg-white dark:bg-black' : ''}
       `}>
           {/* Subtle Inner Gradient/Sheen */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none transition-opacity duration-500" />
           
           {/* Active Glow for Satellites */}
           {type === 'satellite' && status === 'active' && (
-            <div className="absolute -top-10 -right-10 w-20 h-20 bg-plasma-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-plasma-500/20 transition-colors" />
+            <div className="absolute -top-10 -right-10 w-20 h-20 bg-plasma-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-plasma-500/20 transition-colors duration-500" />
           )}
 
           {/* Header */}
-          <div className="relative p-6 flex justify-between items-start border-b border-gray-100/50 dark:border-white/10">
-            <h3 className={`font-bold tracking-tight ${type === 'primary' ? 'text-2xl text-gray-900 dark:text-white' : 'text-lg text-gray-900 dark:text-gray-100'}`}>
+          <div className="relative p-6 flex justify-between items-start border-b border-gray-100/50 dark:border-white/10 transition-colors duration-500">
+            <h3 className={`font-bold tracking-tight transition-colors duration-300 ${type === 'primary' ? 'text-2xl text-gray-900 dark:text-white' : 'text-lg text-gray-900 dark:text-gray-100'}`}>
               {title}
             </h3>
             {type === 'satellite' && (
