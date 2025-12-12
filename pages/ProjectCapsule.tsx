@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from '../context/ThemeContext';
-import { MOCK_PROJECTS } from '../constants';
+import { useProjects } from '../context/ProjectContext';
 import { Capsule } from '../components/Capsule';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -11,12 +11,65 @@ import {
   Database, RefreshCw, Power, ArrowLeft, Cloud,
   HardDrive, Sparkles, Loader2, AlertOctagon, Box
 } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
+
+// Lightweight SVG Chart Component to replace Recharts and avoid hooks errors
+const SimpleMetricChart = ({ data, color = "#34d399" }: { data: any[], color?: string }) => {
+  if (!data || data.length < 2) return null;
+
+  // Calculate scales
+  const values = data.map(d => d.value);
+  const min = 0;
+  const max = Math.max(...values, 100) * 1.2; // Add some headroom
+  
+  // Generate path data
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * 100;
+    const y = 100 - ((d.value - min) / (max - min)) * 100;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const areaPath = `M0,100 ${points} L100,100 Z`;
+
+  return (
+    <div className="w-full h-full relative group">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+        {/* Gradient Area */}
+        <defs>
+          <linearGradient id={`grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill={`url(#grad-${color})`} className="opacity-50" />
+        
+        {/* Line */}
+        <polyline 
+          points={points} 
+          fill="none" 
+          stroke={color} 
+          strokeWidth="2" 
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      
+      {/* Simple Tooltip on Hover (CSS based positioning could be added, simpler here) */}
+      <div className="absolute top-0 right-0 bg-neutral-900/80 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        Live Metrics
+      </div>
+    </div>
+  );
+};
 
 export const ProjectCapsule: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const project = MOCK_PROJECTS.find(p => p.id === id);
+  const { getProject } = useProjects();
+  
+  // Get project from context instead of MOCK constants
+  const project = id ? getProject(id) : undefined;
+  
   const [activeCapsule, setActiveCapsule] = useState<string | null>(null);
   const [actionFlowType, setActionFlowType] = useState<ActionType>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
@@ -318,15 +371,8 @@ export const ProjectCapsule: React.FC = () => {
                </div>
              ) : (
                <div className="h-20 w-full mb-2">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <LineChart data={project.metrics.network}>
-                       <Tooltip 
-                         contentStyle={{ background: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                         itemStyle={{ color: '#34d399' }}
-                       />
-                       <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} dot={false} />
-                     </LineChart>
-                   </ResponsiveContainer>
+                   {/* Replaced Recharts with SimpleMetricChart */}
+                   <SimpleMetricChart data={project.metrics.network} color="#34d399" />
                </div>
              )}
              <div className="flex justify-between items-center">

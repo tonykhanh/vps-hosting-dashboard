@@ -1,19 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from '../context/ThemeContext';
-import { MOCK_PROJECTS } from '../constants';
+import { useProjects } from '../context/ProjectContext';
 import { Badge } from '../components/Badge';
 import { ArrowRight, Sparkles, Zap, Command, Search, Server, Globe, Activity, Loader2, Plus, Box } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { projects } = useProjects();
   const [intent, setIntent] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isMorphing, setIsMorphing] = useState(false);
 
-  // Filter projects for the "Capsule Workspace"
-  const activeProjects = MOCK_PROJECTS.filter(p => p.id !== 'p-new');
+  // Filter projects for the "Capsule Workspace" - Exclude the placeholder 'p-new' if it exists in initial mock
+  // In a real app, 'p-new' usually serves as a "Create" card in lists, but here we just want actual projects.
+  const activeProjects = projects.filter(p => p.id !== 'p-new');
 
   useEffect(() => {
     if (intent.length > 5) {
@@ -33,7 +35,8 @@ export const Dashboard: React.FC = () => {
     setIsMorphing(true);
     // Simulate "Graph Compilation" before navigation
     setTimeout(() => {
-      navigate('/console/projects/p-new');
+      // For demo purposes, route to create new project if intent is typed
+      navigate('/console/create'); 
     }, 1500);
   };
 

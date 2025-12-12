@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from '../context/ThemeContext';
-import { MOCK_PROJECTS } from '../constants';
+import { useProjects } from '../context/ProjectContext';
 import { Card, CardHeader } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -11,7 +11,11 @@ import { ArrowLeft, Globe, RefreshCw, Power, Terminal, Settings } from 'lucide-r
 export const ProjectDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const project = MOCK_PROJECTS.find(p => p.id === id);
+  const { getProject } = useProjects();
+  
+  // Get project dynamically
+  const project = id ? getProject(id) : undefined;
+  
   const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs'>('overview');
 
   if (!project) return <div className="p-10 text-center">Project not found</div>;
