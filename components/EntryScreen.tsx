@@ -4,6 +4,7 @@ import {
   Hexagon, Activity, Lock, ArrowRight, ShieldCheck, X, User, Key, Server
 } from 'lucide-react';
 import { useNavigate } from '../context/ThemeContext';
+import { CircuitBackground } from './CircuitBackground';
 
 interface EntryScreenProps {
   onComplete: () => void;
@@ -76,6 +77,10 @@ export const EntryScreen: React.FC<EntryScreenProps> = ({ onComplete }) => {
       {/* Global Atmospheric Background (Matching Landing Page) */}
       <div className="absolute inset-0 z-0 pointer-events-none">
          <div className="absolute inset-0 bg-[#02040a]"></div>
+         
+         {/* Circuit Layer for Cloud Tech Feel */}
+         <CircuitBackground opacity={0.25} />
+
          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-plasma-900/20 rounded-full blur-[120px] opacity-60"></div>
          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-900/10 rounded-full blur-[100px]"></div>
          <div 
