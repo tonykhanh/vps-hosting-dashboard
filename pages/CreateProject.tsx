@@ -380,7 +380,7 @@ export const CreateProject: React.FC = () => {
                        </div>
                     </div>
                  ) : (
-                    <div className="text-center space-y-8 animate-in zoom-in duration-500 border-none">
+                    <div className="text-center space-y-8 border-none">
                        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(34,197,94,0.4)]">
                           <Check size={48} className="text-white" strokeWidth={3} />
                        </div>
