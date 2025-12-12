@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `You are Autonix, an Autonomous Cloud Ops AI (2030 Edition).
@@ -19,11 +18,15 @@ Always respond in a helpful, expert DevOps persona.`;
 
 let ai: GoogleGenAI | null = null;
 
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// We assume this variable is pre-configured, valid, and accessible.
+const apiKey = process.env.API_KEY;
+
 try {
-  if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (apiKey) {
+    ai = new GoogleGenAI({ apiKey: apiKey });
   } else {
-    console.warn("Autonix AI: No API_KEY found in environment.");
+    console.warn("Autonix AI: No API Key found. Please set process.env.API_KEY.");
   }
 } catch (error) {
   console.error("Autonix AI: Failed to initialize.", error);
@@ -31,7 +34,7 @@ try {
 
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   if (!ai) {
-    return "AI Core Offline: API Key missing or initialization failed.";
+    return "AI Core Offline: API Key missing. Please configure process.env.API_KEY.";
   }
 
   try {
@@ -47,6 +50,6 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
     return response.text || "I processed the data but the response stream was empty.";
   } catch (error) {
     console.error("Autonix AI Error:", error);
-    return "Error communicating with the Action Graph Engine.";
+    return "Error communicating with the Action Graph Engine. Check console for details.";
   }
 };
