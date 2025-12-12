@@ -30,165 +30,12 @@ import { Storage } from './pages/Storage';
 import { AICopilot } from './components/AICopilot';
 import { ThemeProvider } from './context/ThemeContext';
 import { Menu, Hexagon } from 'lucide-react';
-
-// --- Global Effects ---
-
-const CloudNetworkEffect = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { theme } = useTheme();
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const mouseRef = useRef({ x: -100, y: -100 });
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current) {
-        setDimensions({
-          width: window.innerWidth,
-          height: window.innerHeight
-        });
-        canvasRef.current.width = window.innerWidth;
-        canvasRef.current.height = window.innerHeight;
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Theme Config (2030 Palette)
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    const nodeColor = isDark ? 'rgba(12, 141, 233, 0.4)' : 'rgba(12, 141, 233, 0.3)'; // Plasma Blue
-    const lineColor = isDark ? '12, 141, 233' : '59, 130, 246';
-    const textColor = isDark ? 'rgba(148, 163, 184, 0.4)' : 'rgba(71, 85, 105, 0.3)';
-
-    const codeSymbols = ['{ }', '< />', 'fn', 'var', '01', 'git', 'npm', 'if', ';;', '=>'];
-    const nodeCount = 35; // Fewer nodes for cleaner look
-    const connectionDistance = 250;
-    const mouseDistance = 350;
-
-    const nodes = Array.from({ length: nodeCount }).map(() => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      size: Math.random() * 2 + 1,
-      symbol: codeSymbols[Math.floor(Math.random() * codeSymbols.length)]
-    }));
-
-    let animationFrameId: number;
-
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      nodes.forEach((node, i) => {
-        node.x += node.vx;
-        node.y += node.vy;
-
-        // Bounce off walls
-        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-
-        // Draw Node (Cloud Point)
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-        ctx.fillStyle = nodeColor;
-        ctx.fill();
-
-        // Draw Code Symbol (Programmer Effect) - Fainter
-        ctx.font = '10px monospace';
-        ctx.fillStyle = textColor;
-        ctx.fillText(node.symbol, node.x + 8, node.y - 8);
-
-        // Interaction with Mouse
-        const dxMouse = mouseRef.current.x - node.x;
-        const dyMouse = mouseRef.current.y - node.y;
-        const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-
-        if (distMouse < mouseDistance) {
-          ctx.beginPath();
-          ctx.moveTo(node.x, node.y);
-          ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
-          ctx.strokeStyle = `rgba(${lineColor}, ${0.15 * (1 - distMouse / mouseDistance)})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          
-          // Gentle attraction to mouse
-          node.x += dxMouse * 0.005;
-          node.y += dyMouse * 0.005;
-        }
-
-        // Connect nodes
-        for (let j = i + 1; j < nodes.length; j++) {
-          const other = nodes[j];
-          const dx = other.x - node.x;
-          const dy = other.y - node.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < connectionDistance) {
-            ctx.beginPath();
-            ctx.moveTo(node.x, node.y);
-            ctx.lineTo(other.x, other.y);
-            ctx.strokeStyle = `rgba(${lineColor}, ${0.05 * (1 - dist / connectionDistance)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      });
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [dimensions, theme]);
-
-  return (
-    <canvas 
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none z-0"
-    />
-  );
-};
+import { CircuitBackground } from './components/CircuitBackground';
 
 const GlobalMouseEffects = () => {
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-hologram-white dark:bg-graphite-950 transition-colors duration-700">
-      
-      {/* 3D Perspective Grid - The "Entry" Grid made Global */}
-      <div 
-        className="absolute inset-0 bg-spatial-grid opacity-30 dark:opacity-20 transform-gpu transition-transform duration-[200ms]"
-        style={{ 
-          transform: `perspective(1000px) rotateX(10deg) translateZ(0) translateY(calc(var(--y) * 0.01)) translateX(calc(var(--x) * 0.01))` 
-        }}
-      ></div>
-
-      {/* Cloud & Code Network (Canvas) */}
-      <CloudNetworkEffect />
-      
-      {/* Ambient Spotlight Glow - Follows Mouse */}
-      <div 
-        className="absolute inset-0 transition-opacity duration-1000 opacity-40 dark:opacity-15 mix-blend-overlay"
-        style={{
-          background: 'radial-gradient(circle 800px at var(--x) var(--y), rgba(12, 141, 233, 0.2), transparent 70%)',
-        }}
-      />
+    <div className="fixed inset-0 pointer-events-none z-[-10] overflow-hidden bg-white dark:bg-black transition-colors duration-700">
+      <CircuitBackground interactive={true} />
     </div>
   );
 };
@@ -302,7 +149,6 @@ const ConsoleGuard: React.FC = () => {
   const { isAuthenticated } = useTheme();
   
   // If not authenticated, redirect to Landing Page instead of Entry screen
-  // This ensures a proper flow: Landing -> Launch -> Entry -> Dashboard
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }

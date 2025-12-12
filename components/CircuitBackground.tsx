@@ -1,111 +1,183 @@
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
-export const CircuitBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.15 }) => {
+interface CircuitBackgroundProps {
+  opacity?: number;
+  className?: string;
+  forceTheme?: 'light' | 'dark';
+  interactive?: boolean;
+}
+
+export const CircuitBackground: React.FC<CircuitBackgroundProps> = ({ 
+  opacity = 0.2, 
+  className = '',
+  forceTheme,
+  interactive = true
+}) => {
+  const { theme: contextTheme } = useTheme();
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 }); // Start center
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Theme Logic
+  const isSystemDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const activeTheme = forceTheme || contextTheme;
+  const isDark = activeTheme === 'dark' || (activeTheme === 'system' && isSystemDark);
+
+  // Colors - Deep Space Aesthetic (Darkened for better contrast)
+  const bgGradient = isDark 
+    ? 'radial-gradient(circle at 50% 0%, #050a14 0%, #000000 100%)' // Very dark blue/black
+    : 'radial-gradient(circle at 50% 0%, #f1f5f9 0%, #cbd5e1 100%)'; // Darker slate for light mode depth
+
+  // Grid & Lines
+  // Increased opacity for better visibility
+  const gridColor = isDark ? 'rgba(56, 189, 248, 0.1)' : 'rgba(15, 23, 42, 0.06)'; 
+  const primaryStroke = isDark ? '#38bdf8' : '#0284c7'; // Sky-400 / Sky-600
+  const secondaryStroke = isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.3)';
+
+  // Mouse Interaction with damping for smoothness could be added here, 
+  // but direct React state is usually sufficient for background parallax.
+  useEffect(() => {
+    if (!interactive) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Normalize coordinates 0..1
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      setMousePosition({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [interactive]);
+
+  // Parallax Calculations
+  // Tilt the grid slightly based on mouse Y
+  // Pan the grid background slightly based on mouse X/Y
+  const perspectiveRotateX = 15 + (mousePosition.y * 5); // 15 to 20 degrees tilt
+  const bgPosX = mousePosition.x * -30; // Move grid slightly
+  const bgPosY = mousePosition.y * -30;
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-      {/* 1. Gradient Haze (Deep Space Atmosphere) */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-plasma-900/20 via-transparent to-transparent"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent"></div>
+    <div 
+        ref={containerRef} 
+        className={`absolute inset-0 overflow-hidden pointer-events-none select-none transition-colors duration-1000 ease-in-out ${className}`} 
+        style={{ background: bgGradient }}
+    >
       
-      {/* 2. Holographic Grid Surface (Perspective Plane) */}
+      {/* 1. Dynamic Spotlight (Soft Ambient Glow following mouse) */}
       <div 
-        className="absolute inset-0 bg-spatial-grid opacity-20" 
-        style={{ 
-          transform: 'perspective(1000px) rotateX(20deg) scale(1.5)',
-          maskImage: 'linear-gradient(to bottom, transparent, black 20%, black 80%, transparent)' 
+        className="absolute inset-0 transition-opacity duration-500 ease-out"
+        style={{
+          background: `radial-gradient(800px circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, ${isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(56, 189, 248, 0.15)'}, transparent 70%)`,
         }}
-      ></div>
+      />
 
-      {/* 3. Neural Circuitry SVG */}
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      {/* 2. Perspective Grid Floor */}
+      <div 
+        className="absolute inset-0 will-change-transform"
+        style={{
+            transform: `perspective(1000px) rotateX(${perspectiveRotateX}deg) scale(1.1)`,
+            transformOrigin: '50% 100%', // Rotate from bottom
+            opacity: 0.9
+        }}
+      >
+         <div 
+            className="absolute inset-0" 
+            style={{
+                backgroundImage: `
+                    linear-gradient(${gridColor} 1px, transparent 1px), 
+                    linear-gradient(90deg, ${gridColor} 1px, transparent 1px)
+                `,
+                backgroundSize: '80px 80px',
+                backgroundPosition: `${bgPosX}px ${bgPosY}px`,
+                // Fade out grid at top (horizon)
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 100%)'
+            }}
+         />
+      </div>
+
+      {/* 3. Circuit SVG Layer (Floating Elements) */}
+      <svg className="absolute inset-0 w-full h-full opacity-80" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <filter id="neural-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-          
-          <linearGradient id="trace-gradient-blue" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(14, 165, 233, 0)" />
-            <stop offset="50%" stopColor="rgba(14, 165, 233, 0.8)" />
-            <stop offset="100%" stopColor="rgba(14, 165, 233, 0)" />
-          </linearGradient>
-
-          <linearGradient id="trace-gradient-mint" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(0, 255, 163, 0)" />
-            <stop offset="50%" stopColor="rgba(0, 255, 163, 0.6)" />
-            <stop offset="100%" stopColor="rgba(0, 255, 163, 0)" />
-          </linearGradient>
+            <linearGradient id="circuit-line-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={primaryStroke} stopOpacity="0" />
+                <stop offset="50%" stopColor={primaryStroke} stopOpacity="0.8" />
+                <stop offset="100%" stopColor={primaryStroke} stopOpacity="0" />
+            </linearGradient>
+            
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
         </defs>
 
-        {/* Abstract Neural Pathways (Curved Beziers) */}
-        <g style={{ opacity: opacity + 0.4 }} filter="url(#neural-glow)">
-           {/* Central Vein */}
-           <path 
-             d="M0 50% C 20% 50%, 40% 30%, 50% 30% S 80% 50%, 100% 50%" 
-             fill="none" 
-             stroke="url(#trace-gradient-blue)" 
-             strokeWidth="1.5" 
-             className="circuit-path-slow"
-           />
-           
-           {/* Branching Veins */}
-           <path 
-             d="M50% 30% C 50% 10%, 70% 0, 80% 0" 
-             fill="none" 
-             stroke="rgba(56, 189, 248, 0.3)" 
-             strokeWidth="1" 
-             className="circuit-path"
-             style={{ animationDuration: '7s' }}
-           />
-           <path 
-             d="M50% 30% C 50% 60%, 30% 80%, 20% 100%" 
-             fill="none" 
-             stroke="url(#trace-gradient-mint)" 
-             strokeWidth="1" 
-             className="circuit-path-fast" 
-           />
-
-           {/* Glowing Nodes at Intersections */}
-           <circle cx="50%" cy="30%" r="3" fill="#0ea5e9" className="animate-pulse" />
-           <circle cx="20%" cy="50%" r="2" fill="#0ea5e9" opacity="0.6" />
-           <circle cx="80%" cy="50%" r="2" fill="#0ea5e9" opacity="0.6" />
+        {/* Background Tech Lines (Static but subtle) */}
+        <g stroke={secondaryStroke} strokeWidth="1" fill="none">
+            {/* Left Diagonal */}
+            <path d="M-100,800 L300,400" />
+            <path d="M-100,850 L350,400" opacity="0.6" />
+            
+            {/* Right Diagonal */}
+            <path d="M2000,800 L1600,400" />
+            <path d="M2000,850 L1550,400" opacity="0.6" />
+            
+            {/* Hexagons (Abstract) */}
+            <path d="M100 100 L120 100 L130 117 L120 134 L100 134 L90 117 Z" transform="translate(100, 200)" opacity="0.3" />
+            <path d="M100 100 L120 100 L130 117 L120 134 L100 134 L90 117 Z" transform="translate(1400, 300)" opacity="0.3" />
         </g>
 
-        {/* Transparent Microchip Layers (Floating HUD Elements) */}
-        <g style={{ opacity: opacity + 0.15 }} stroke="rgba(14, 165, 233, 0.15)" fill="none" strokeWidth="1">
-           {/* Left Chip */}
-           <path d="M5% 20% L15% 20% L18% 25% L18% 35% L15% 40% L5% 40% Z" />
-           <line x1="5%" y1="25%" x2="10%" y2="25%" />
-           <line x1="5%" y1="30%" x2="12%" y2="30%" />
-           <line x1="5%" y1="35%" x2="10%" y2="35%" />
-
-           {/* Right Chip */}
-           <path d="M95% 60% L85% 60% L82% 65% L82% 75% L85% 80% L95% 80% Z" />
-           <line x1="95%" y1="65%" x2="90%" y2="65%" />
-           <line x1="95%" y1="70%" x2="88%" y2="70%" />
-           <line x1="95%" y1="75%" x2="90%" y2="75%" />
-        </g>
+        {/* Animated Flow Lines */}
+        {/* We use large curved paths to simulate data streams */}
+        <path 
+            d="M-200,600 Q400,400 800,600 T1800,500" 
+            stroke="url(#circuit-line-grad)" 
+            strokeWidth="2" 
+            fill="none"
+            className="circuit-path-slow"
+            style={{ opacity: 0.7 }}
+        />
         
-        {/* Ambient Data Particles */}
-        {Array.from({ length: 15 }).map((_, i) => (
+        <path 
+            d="M-200,300 Q500,100 1200,300 T2200,200" 
+            stroke="url(#circuit-line-grad)" 
+            strokeWidth="1.5" 
+            fill="none"
+            className="circuit-path"
+            style={{ animationDuration: '8s', opacity: 0.6 }}
+        />
+
+        {/* Pulsing Nodes */}
+        {/* Randomly placed nodes that pulse softly */}
+        {[
+            { cx: '15%', cy: '30%', r: 2, delay: '0s' },
+            { cx: '85%', cy: '60%', r: 2, delay: '1.5s' },
+            { cx: '50%', cy: '80%', r: 3, delay: '2.2s' },
+            { cx: '30%', cy: '50%', r: 1.5, delay: '0.5s' }
+        ].map((node, i) => (
             <circle 
                 key={i}
-                cx={`${Math.random() * 100}%`} 
-                cy={`${Math.random() * 100}%`} 
-                r={Math.random() * 1.5 + 0.5} 
-                fill={`rgba(${Math.random() > 0.5 ? '14, 165, 233' : '0, 255, 163'}, ${0.2 + Math.random() * 0.3})`}
+                cx={node.cx} 
+                cy={node.cy} 
+                r={node.r} 
+                fill={primaryStroke}
                 className="animate-pulse"
-                style={{ 
-                  animationDelay: `${Math.random() * 5}s`, 
-                  animationDuration: `${3 + Math.random() * 4}s` 
-                }}
+                style={{ animationDuration: '4s', animationDelay: node.delay }}
+                filter={isDark ? "url(#glow)" : ""}
             />
         ))}
       </svg>
       
-      {/* Soft Vignette Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,#020617_100%)] opacity-80"></div>
+      {/* 4. Vignette Overlay (Darken edges) */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+            background: isDark 
+                ? 'radial-gradient(circle at center, transparent 30%, #000000 100%)' 
+                : 'radial-gradient(circle at center, transparent 40%, #ffffff 100%)'
+        }}
+      />
     </div>
   );
 };
