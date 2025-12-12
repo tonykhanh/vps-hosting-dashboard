@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 // --- Theme Context ---
 export type Theme = 'light' | 'dark' | 'system';
@@ -63,27 +63,46 @@ export const useTheme = () => {
 };
 
 // --- Router Shim (History API Version) ---
-// Switched from HashRouter to BrowserRouter for clean URLs (no /#/)
-const RouterContext = createContext<{ path: string; navigate: (to: string) => void }>({ 
+const RouterContext = createContext<{ 
+  path: string; 
+  navigate: (to: string, options?: { replace?: boolean }) => void 
+}>({ 
   path: '/', 
   navigate: () => {} 
 });
 
 export const BrowserRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [path, setPath] = useState(() => window.location.pathname);
+  const [path, setPath] = useState(() => {
+    try {
+      return window.location.pathname || '/';
+    } catch {
+      return '/';
+    }
+  });
 
   useEffect(() => {
     const handler = () => {
-       setPath(window.location.pathname);
+       try {
+         setPath(window.location.pathname);
+       } catch {}
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
-  const navigate = (to: string) => {
-    window.history.pushState({}, '', to);
+  const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
+    try {
+      if (options?.replace) {
+        window.history.replaceState({}, '', to);
+      } else {
+        window.history.pushState({}, '', to);
+      }
+    } catch (e) {
+      // Ignore security errors in sandboxed environments (e.g. iframe/blob)
+      console.warn('Navigation URL update prevented by environment:', e);
+    }
     setPath(to);
-  };
+  }, []);
 
   return (
     <RouterContext.Provider value={{ path, navigate }}>
@@ -118,17 +137,23 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       
       // Parameter match (Simple implementation)
       if (routePath && routePath.includes('/:')) {
-        const base = routePath.split('/:')[0]; // e.g., "/console/projects/"
-        // Ensure strictly starts with base and has something after
+        const base = routePath.split('/:')[0];
         if (path.startsWith(base) && path.length > base.length) {
            matchedElement = element;
            return;
         }
       }
+      
+      // Catch-all match (path="*")
+      if (routePath === '*') {
+        matchedElement = element;
+        return;
+      }
     }
   });
   
-  return matchedElement || null;
+  // Wrap in Fragment to ensure it's treated as a valid React Node and avoid #31 error
+  return matchedElement ? <>{matchedElement}</> : null;
 };
 
 export const Route: React.FC<{ path: string, element: React.ReactNode }> = () => null;
@@ -136,15 +161,7 @@ export const Route: React.FC<{ path: string, element: React.ReactNode }> = () =>
 export const Navigate: React.FC<{ to: string, replace?: boolean }> = ({ to, replace }) => {
   const { navigate } = useContext(RouterContext);
   useEffect(() => {
-      // Use replaceState if replace is true, otherwise pushState is handled by navigate
-      if (replace) {
-          window.history.replaceState({}, '', to);
-          // We need to manually update context state since replaceState doesn't fire popstate
-          // But our navigate function sets state directly.
-          // To keep it clean, we just call navigate (which does pushState) or implement a separate logic.
-          // For simplicity in this shim, we just use navigate unless strict replace is needed.
-      }
-      navigate(to);
+      navigate(to, { replace });
   }, [to, navigate, replace]);
   return null;
 };
@@ -152,7 +169,14 @@ export const Navigate: React.FC<{ to: string, replace?: boolean }> = ({ to, repl
 export const Link: React.FC<any> = ({ to, children, className, onClick, ...props }) => {
   const { navigate } = useContext(RouterContext);
 
+  const isExternal = to && (to.startsWith('http') || to.startsWith('//') || to.startsWith('mailto:'));
+
   const handleClick = (e: React.MouseEvent) => {
+    if (isExternal) return;
+    
+    // Allow default behavior for modifier keys (new tab, etc)
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
     e.preventDefault();
     e.stopPropagation();
     if (onClick) onClick(e);
@@ -160,7 +184,14 @@ export const Link: React.FC<any> = ({ to, children, className, onClick, ...props
   };
 
   return (
-    <a href={to} className={className} onClick={handleClick} {...props}>
+    <a 
+      href={to} 
+      className={className} 
+      onClick={handleClick} 
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
+      {...props}
+    >
       {children}
     </a>
   );
@@ -178,13 +209,8 @@ export const useNavigate = () => {
 
 export const useParams = () => {
   const { path } = useContext(RouterContext);
-  // Remove query params
   const cleanPath = path.split('?')[0]; 
-  // Remove trailing slash if present (except root)
   const normalizedPath = cleanPath.endsWith('/') && cleanPath.length > 1 ? cleanPath.slice(0, -1) : cleanPath;
   const parts = normalizedPath.split('/');
-  
-  // Very basic ID extraction: assumes ID is always the last segment
-  // In a real router, this matches against the route definition.
   return { id: parts[parts.length - 1] };
 };

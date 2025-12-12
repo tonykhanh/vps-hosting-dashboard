@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
 import { Sidebar } from './components/Sidebar';
 import { EntryScreen } from './components/EntryScreen';
@@ -161,7 +161,7 @@ const LocationEnforcer: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useTheme();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const isPublicPath = pathname === '/' || pathname === '/entry';
 
     if (!isAuthenticated && !isPublicPath) {
@@ -188,6 +188,9 @@ const App: React.FC = () => {
           
           {/* Protected Console Routes */}
           <Route path="/console/*" element={<ConsoleGuard />} />
+
+          {/* Catch-all Redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

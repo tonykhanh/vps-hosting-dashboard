@@ -20,7 +20,7 @@ let ai: GoogleGenAI | null = null;
 
 // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
 // We assume this variable is pre-configured, valid, and accessible.
-const apiKey = process.env.VITE_API_KEY;
+const apiKey = process.env.API_KEY;
 
 try {
   if (apiKey) {
