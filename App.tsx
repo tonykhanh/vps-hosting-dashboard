@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { Sidebar } from './components/Sidebar';
 import { EntryScreen } from './components/EntryScreen';
 import { LandingPage } from './pages/LandingPage';
@@ -29,7 +30,6 @@ import { NetworkPage } from './pages/Network';
 import { Storage } from './pages/Storage';
 import { AICopilot } from './components/AICopilot';
 import { ThemeProvider } from './context/ThemeContext';
-import { ProjectProvider } from './context/ProjectContext';
 import { Menu, Hexagon } from 'lucide-react';
 import { CircuitBackground } from './components/CircuitBackground';
 
@@ -177,8 +177,8 @@ const LocationEnforcer: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <ProjectProvider>
+      <ProjectProvider>
+        <BrowserRouter>
           <LocationEnforcer />
           <GlobalMouseEffects />
           <Routes>
@@ -194,8 +194,8 @@ const App: React.FC = () => {
             {/* Catch-all Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </ProjectProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </ProjectProvider>
     </ThemeProvider>
   );
 };

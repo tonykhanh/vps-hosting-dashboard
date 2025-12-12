@@ -22,10 +22,12 @@ export const CreateProject: React.FC = () => {
   const [isDeploying, setIsDeploying] = useState(false);
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
+    if (currentStep === 2) {
+      // Move to Deploy step and trigger logic
+      setCurrentStep(3);
       handleDeploy();
+    } else if (currentStep < steps.length - 1) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -64,7 +66,7 @@ export const CreateProject: React.FC = () => {
       }
 
       setIsDeploying(false);
-      navigate('/console');
+      // Removed auto-navigate to allow user to see success screen
     }, 3000);
   };
 
@@ -306,8 +308,8 @@ export const CreateProject: React.FC = () => {
                              Your capsule <span className="font-mono text-gray-900 dark:text-white font-bold">{formData.name}</span> is now live.
                           </p>
                        </div>
-                       <Button size="lg" className="shadow-xl shadow-plasma-500/20" onClick={() => navigate('/console')}>
-                          Enter Capsule
+                       <Button size="lg" className="shadow-xl shadow-plasma-500/20" onClick={() => navigate('/console/projects')}>
+                          Go to Project Directory
                        </Button>
                     </div>
                  )}

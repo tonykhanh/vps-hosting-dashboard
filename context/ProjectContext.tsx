@@ -1,6 +1,6 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Project, ProjectStatus, BlueprintType } from '../types';
+import React, { createContext, useContext, useState } from 'react';
+import { Project, ProjectStatus } from '../types';
 import { MOCK_PROJECTS } from '../constants';
 
 interface ProjectContextType {
@@ -14,11 +14,19 @@ interface ProjectContextType {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Initialize with MOCK_PROJECTS, but allow it to be modified
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
 
   const addProject = (project: Project) => {
     setProjects(prev => [project, ...prev]);
+
+    // Auto-transition from PROVISIONING to RUNNING after 30 seconds
+    if (project.status === ProjectStatus.PROVISIONING) {
+      setTimeout(() => {
+        setProjects(prev => prev.map(p => 
+          p.id === project.id ? { ...p, status: ProjectStatus.RUNNING } : p
+        ));
+      }, 30000);
+    }
   };
 
   const updateProject = (id: string, updates: Partial<Project>) => {
