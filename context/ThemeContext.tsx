@@ -174,6 +174,10 @@ export const useNavigate = () => {
 
 export const useParams = () => {
   const { path } = useContext(RouterContext);
-  const parts = path.split('/');
+  // Remove query params
+  const cleanPath = path.split('?')[0]; 
+  // Remove trailing slash if present (except root)
+  const normalizedPath = cleanPath.endsWith('/') && cleanPath.length > 1 ? cleanPath.slice(0, -1) : cleanPath;
+  const parts = normalizedPath.split('/');
   return { id: parts[parts.length - 1] };
 };

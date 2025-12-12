@@ -9,7 +9,7 @@ import { ActionFlow, ActionType } from '../components/ActionFlow';
 import { 
   Server, Globe, Activity, GitBranch, Shield, 
   Database, RefreshCw, Power, ArrowLeft, Cloud,
-  HardDrive, Sparkles, Loader2
+  HardDrive, Sparkles, Loader2, AlertOctagon, Box
 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -27,8 +27,6 @@ export const ProjectCapsule: React.FC = () => {
     }
   }, [project]);
 
-  if (!project) return <div>Project not found</div>;
-
   const handleAction = (type: ActionType) => {
     setActionFlowType(type);
   };
@@ -36,6 +34,33 @@ export const ProjectCapsule: React.FC = () => {
   const handleCloseAction = () => {
     setActionFlowType(null);
   };
+
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+         <div className="w-24 h-24 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center justify-center relative">
+            <Box size={48} className="text-gray-400 dark:text-neutral-600" />
+            <div className="absolute -bottom-2 -right-2 bg-white dark:bg-neutral-900 p-2 rounded-full shadow-lg">
+               <AlertOctagon size={24} className="text-red-500" />
+            </div>
+         </div>
+         <div className="max-w-md">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Capsule Not Found</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+               The infrastructure unit <span className="font-mono bg-gray-100 dark:bg-neutral-800 px-1 rounded">{id}</span> could not be located in the current matrix.
+            </p>
+            <div className="flex justify-center gap-4">
+               <Button onClick={() => navigate('/console/projects')} variant="primary" className="shadow-lg shadow-plasma-500/20">
+                  <ArrowLeft size={18} className="mr-2" /> Return to Directory
+               </Button>
+               <Button onClick={() => navigate('/console/create')} variant="secondary" className="dark:bg-neutral-800 dark:text-white">
+                  Create New Capsule
+               </Button>
+            </div>
+         </div>
+      </div>
+    );
+  }
 
   // Spatial Layout:
   // We use a CSS Grid that creates a "Hub" feel.
@@ -55,11 +80,11 @@ export const ProjectCapsule: React.FC = () => {
       {/* Navigation Breadcrumb (Minimal) */}
       <div className={`relative md:absolute top-0 left-0 z-40 transition-opacity duration-300 mb-4 md:mb-0 ${actionFlowType ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
         <button 
-          onClick={() => navigate('/console')} 
+          onClick={() => navigate('/console/projects')} 
           className="flex items-center gap-2 text-gray-500 hover:text-plasma-600 dark:text-gray-400 dark:hover:text-plasma-400 transition-colors px-4 py-2 rounded-lg hover:bg-white/40 dark:hover:bg-black/40 backdrop-blur-md"
         >
           <ArrowLeft size={16} />
-          <span className="text-sm font-medium">Back to Workspace</span>
+          <span className="text-sm font-medium">Back to Directory</span>
         </button>
       </div>
 
@@ -243,7 +268,7 @@ export const ProjectCapsule: React.FC = () => {
            {/* Deployment Capsule */}
            <Capsule 
             title="Deployment Flow" 
-            type="satellite"
+            type="satellite" 
             status={isProvisioning ? "warning" : "active"}
             onClick={() => setActiveCapsule(activeCapsule === 'deploy' ? null : 'deploy')}
             isExpanded={activeCapsule === 'deploy'}
