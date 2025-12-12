@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useTheme } from './context/ThemeContext';
 import { Sidebar } from './components/Sidebar';
 import { EntryScreen } from './components/EntryScreen';
 import { LandingPage } from './pages/LandingPage';
@@ -156,23 +156,14 @@ const ConsoleGuard: React.FC = () => {
   return <Layout />;
 };
 
-/**
- * Enforces strict routing logic.
- * If the user reloads the page on '/entry' or any other route but is NOT authenticated,
- * we force them back to the Landing Page ('/').
- * This prevents getting stuck on the Entry animation screen on reload.
- */
 const LocationEnforcer: React.FC = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useTheme();
 
-  // Use useLayoutEffect to trigger before paint, preventing visual flash of wrong route
   useLayoutEffect(() => {
-    // Allow access to landing page AND entry page without authentication
     const isPublicPath = pathname === '/' || pathname === '/entry';
 
-    // If user is not authenticated and trying to access a private path (anything other than root or entry)
     if (!isAuthenticated && !isPublicPath) {
       console.log('LocationEnforcer: Redirecting unauthenticated user to Landing Page');
       navigate('/');
@@ -185,7 +176,7 @@ const LocationEnforcer: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <HashRouter>
+      <BrowserRouter>
         <LocationEnforcer />
         <GlobalMouseEffects />
         <Routes>
@@ -198,7 +189,7 @@ const App: React.FC = () => {
           {/* Protected Console Routes */}
           <Route path="/console/*" element={<ConsoleGuard />} />
         </Routes>
-      </HashRouter>
+      </BrowserRouter>
     </ThemeProvider>
   );
 };

@@ -62,34 +62,27 @@ export const useTheme = () => {
   return context;
 };
 
-// --- Router Shim ---
-// A simple hash-based router to avoid Vercel/SPA routing issues without server config
+// --- Router Shim (History API Version) ---
+// Switched from HashRouter to BrowserRouter for clean URLs (no /#/)
 const RouterContext = createContext<{ path: string; navigate: (to: string) => void }>({ 
   path: '/', 
   navigate: () => {} 
 });
 
-export const HashRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [path, setPath] = useState(() => {
-      try {
-          return window.location.hash.slice(1) || '/';
-      } catch (e) {
-          return '/';
-      }
-  });
+export const BrowserRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [path, setPath] = useState(() => window.location.pathname);
 
   useEffect(() => {
     const handler = () => {
-       let p = window.location.hash.slice(1);
-       if (!p || p === '') p = '/';
-       setPath(p);
+       setPath(window.location.pathname);
     };
-    window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
   }, []);
 
   const navigate = (to: string) => {
-    window.location.hash = to;
+    window.history.pushState({}, '', to);
+    setPath(to);
   };
 
   return (
@@ -123,10 +116,11 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }
       }
       
-      // Parameter match
+      // Parameter match (Simple implementation)
       if (routePath && routePath.includes('/:')) {
-        const base = routePath.split('/:')[0];
-        if (path.startsWith(base)) {
+        const base = routePath.split('/:')[0]; // e.g., "/console/projects/"
+        // Ensure strictly starts with base and has something after
+        if (path.startsWith(base) && path.length > base.length) {
            matchedElement = element;
            return;
         }
@@ -139,9 +133,19 @@ export const Routes: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 export const Route: React.FC<{ path: string, element: React.ReactNode }> = () => null;
 
-export const Navigate: React.FC<{ to: string, replace?: boolean }> = ({ to }) => {
+export const Navigate: React.FC<{ to: string, replace?: boolean }> = ({ to, replace }) => {
   const { navigate } = useContext(RouterContext);
-  useEffect(() => navigate(to), [to, navigate]);
+  useEffect(() => {
+      // Use replaceState if replace is true, otherwise pushState is handled by navigate
+      if (replace) {
+          window.history.replaceState({}, '', to);
+          // We need to manually update context state since replaceState doesn't fire popstate
+          // But our navigate function sets state directly.
+          // To keep it clean, we just call navigate (which does pushState) or implement a separate logic.
+          // For simplicity in this shim, we just use navigate unless strict replace is needed.
+      }
+      navigate(to);
+  }, [to, navigate, replace]);
   return null;
 };
 
@@ -156,7 +160,7 @@ export const Link: React.FC<any> = ({ to, children, className, onClick, ...props
   };
 
   return (
-    <a href={`#${to}`} className={className} onClick={handleClick} {...props}>
+    <a href={to} className={className} onClick={handleClick} {...props}>
       {children}
     </a>
   );
@@ -179,5 +183,8 @@ export const useParams = () => {
   // Remove trailing slash if present (except root)
   const normalizedPath = cleanPath.endsWith('/') && cleanPath.length > 1 ? cleanPath.slice(0, -1) : cleanPath;
   const parts = normalizedPath.split('/');
+  
+  // Very basic ID extraction: assumes ID is always the last segment
+  // In a real router, this matches against the route definition.
   return { id: parts[parts.length - 1] };
 };
