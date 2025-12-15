@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   GitMerge, Play, Pause, Plus, MoreHorizontal, 
   Clock, CheckCircle2, AlertCircle, RefreshCw, 
   Zap, Bell, Database, Server, ArrowRight,
   Loader2, Trash2, Save, Sparkles, FileText,
   Activity, XCircle, Settings, Shield, BarChart3,
-  GripVertical
+  GripVertical, X, Edit3
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -102,8 +104,13 @@ export const Automation: React.FC = () => {
   ]);
 
   const [activeBuilder, setActiveBuilder] = useState<boolean>(false);
+  const [newWorkflowName, setNewWorkflowName] = useState('New Automation Flow');
   const [builderSteps, setBuilderSteps] = useState<WorkflowStep[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Configuration State
+  const [configuringStep, setConfiguringStep] = useState<WorkflowStep | null>(null);
+  const [tempConfigValue, setTempConfigValue] = useState('');
 
   // Simulation Logic
   const handleRunWorkflow = (id: string) => {
@@ -160,18 +167,42 @@ export const Automation: React.FC = () => {
       type,
       label,
       icon,
-      config: 'Configure...'
+      config: 'Click to configure...'
     };
     setBuilderSteps([...builderSteps, newStep]);
   };
 
-  const loadRecommendation = (rec: any) => {
-    setBuilderSteps([
-       { id: '1', type: 'trigger', label: 'Monitor Alert', icon: AlertCircle, config: 'CPU > 80%' },
-       { id: '2', type: 'action', label: 'Scale Up', icon:  Server, config: '+1 Node' },
-       { id: '3', type: 'notification', label: 'Notify Admin', icon: Bell, config: 'Email' },
-    ]);
-    setActiveBuilder(true);
+  const handleSaveWorkflow = () => {
+    if (builderSteps.length === 0) return;
+    
+    const newWorkflow: Workflow = {
+      id: `wf-${Date.now()}`,
+      name: newWorkflowName,
+      status: 'active',
+      lastRun: 'Never',
+      successRate: 100,
+      avgDuration: '-',
+      steps: builderSteps
+    };
+
+    setWorkflows([newWorkflow, ...workflows]);
+    setActiveBuilder(false);
+    setBuilderSteps([]);
+    setNewWorkflowName('New Automation Flow');
+  };
+
+  const handleStepClick = (step: WorkflowStep) => {
+    setConfiguringStep(step);
+    setTempConfigValue(step.config === 'Click to configure...' ? '' : step.config);
+  };
+
+  const saveStepConfig = () => {
+    if (configuringStep) {
+      setBuilderSteps(prev => prev.map(s => 
+        s.id === configuringStep.id ? { ...s, config: tempConfigValue || 'Configured' } : s
+      ));
+      setConfiguringStep(null);
+    }
   };
 
   // Drag and Drop Logic
@@ -438,86 +469,75 @@ export const Automation: React.FC = () => {
 
       </div>
 
-      {/* Builder Modal */}
-      {activeBuilder && (
-        <div className="fixed inset-0 z-50 bg-neutral-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-5xl h-full md:h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+      {/* Builder Modal with Full Screen Blur */}
+      {activeBuilder && createPortal(
+        <div className="fixed inset-0 z-[100] bg-neutral-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+           <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-neutral-700 relative">
               
               {/* Builder UI Header */}
               <div className="p-4 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800 shrink-0">
-                 <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <GitMerge size={20} className="text-plasma-600"/> Workflow Builder
-                 </h2>
+                 <div className="flex items-center gap-3">
+                    <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <GitMerge size={20} className="text-plasma-600"/> 
+                        <input 
+                           type="text" 
+                           value={newWorkflowName}
+                           onChange={(e) => setNewWorkflowName(e.target.value)}
+                           className="bg-transparent border-none outline-none focus:ring-1 focus:ring-plasma-500 rounded px-2 py-1 text-lg font-bold w-64"
+                        />
+                    </h2>
+                    <span className="text-xs text-gray-500 bg-gray-200 dark:bg-neutral-700 px-2 py-0.5 rounded">Draft</span>
+                 </div>
                  <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => setActiveBuilder(false)} className="dark:bg-neutral-700 dark:text-white">Cancel</Button>
-                    <Button onClick={() => setActiveBuilder(false)} className="gap-2"><Save size={16}/> Save</Button>
+                    <Button onClick={handleSaveWorkflow} className="gap-2 shadow-lg shadow-plasma-500/20" disabled={builderSteps.length === 0}>
+                        <Save size={16}/> Save & Enable
+                    </Button>
                  </div>
               </div>
 
               {/* Canvas Area */}
               <div className="flex-1 flex overflow-hidden flex-col md:flex-row">
-                 {/* Sidebar Tools - Hidden on small mobile or stacked */}
-                 <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 overflow-y-auto shrink-0 max-h-[30vh] md:max-h-none">
+                 {/* Sidebar Tools */}
+                 <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 overflow-y-auto shrink-0 custom-scrollbar">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Triggers</h3>
                     <div className="space-y-2 mb-6">
-                       <button 
-                         onClick={() => addToBuilder('trigger', 'Webhook', GitMerge)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'trigger', 'Webhook')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <GitMerge size={16} className="text-amber-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-amber-700 dark:group-hover:text-amber-300">Webhook</span>
-                       </button>
-                       <button 
-                         onClick={() => addToBuilder('trigger', 'Schedule', Clock)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'trigger', 'Schedule')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <Clock size={16} className="text-amber-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-amber-700 dark:group-hover:text-amber-300">Schedule</span>
-                       </button>
-                       <button 
-                         onClick={() => addToBuilder('trigger', 'Alert', AlertCircle)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'trigger', 'Alert')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <AlertCircle size={16} className="text-amber-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-amber-700 dark:group-hover:text-amber-300">Alert</span>
-                       </button>
+                       {[
+                         { id: 'webhook', label: 'Webhook', icon: GitMerge },
+                         { id: 'schedule', label: 'Schedule', icon: Clock },
+                         { id: 'alert', label: 'Alert', icon: AlertCircle }
+                       ].map(t => (
+                          <button 
+                            key={t.id}
+                            onClick={() => addToBuilder('trigger', t.label, t.icon)}
+                            draggable="true" 
+                            onDragStart={(e) => handleDragStart(e, 'trigger', t.label)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-grab active:cursor-grabbing transition-colors group"
+                          >
+                             <t.icon size={16} className="text-amber-500" />
+                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-amber-700 dark:group-hover:text-amber-300">{t.label}</span>
+                          </button>
+                       ))}
                     </div>
 
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Actions</h3>
                     <div className="space-y-2">
-                       <button 
-                         onClick={() => addToBuilder('action', 'Deploy', RefreshCw)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'action', 'Deploy')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <RefreshCw size={16} className="text-blue-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">Deploy</span>
-                       </button>
-                       <button 
-                         onClick={() => addToBuilder('action', 'Scale', Server)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'action', 'Scale')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <Server size={16} className="text-blue-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">Scale</span>
-                       </button>
-                       <button 
-                         onClick={() => addToBuilder('notification', 'Notify', Bell)}
-                         draggable="true" 
-                         onDragStart={(e) => handleDragStart(e, 'notification', 'Notify')}
-                         className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing transition-colors group"
-                       >
-                          <Bell size={16} className="text-blue-500" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">Notify</span>
-                       </button>
+                       {[
+                         { id: 'deploy', label: 'Deploy', icon: RefreshCw },
+                         { id: 'scale', label: 'Scale', icon: Server },
+                         { id: 'notify', label: 'Notify', icon: Bell }
+                       ].map(a => (
+                          <button 
+                            key={a.id}
+                            onClick={() => addToBuilder('action', a.label, a.icon)}
+                            draggable="true" 
+                            onDragStart={(e) => handleDragStart(e, 'action', a.label)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing transition-colors group"
+                          >
+                             <a.icon size={16} className="text-blue-500" />
+                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">{a.label}</span>
+                          </button>
+                       ))}
                     </div>
                  </div>
 
@@ -538,7 +558,14 @@ export const Automation: React.FC = () => {
                        <div className="flex flex-col items-center gap-4 max-w-lg mx-auto pb-10">
                           {builderSteps.map((step, index) => (
                              <React.Fragment key={step.id}>
-                                <div className="w-full bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 relative group hover:border-plasma-400 transition-colors animate-in slide-in-from-bottom-2 flex items-center justify-between">
+                                <div 
+                                    className={`w-full bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm border relative group transition-colors animate-in slide-in-from-bottom-2 flex items-center justify-between cursor-pointer ${
+                                        configuringStep?.id === step.id 
+                                            ? 'border-plasma-500 ring-2 ring-plasma-500/20' 
+                                            : 'border-gray-200 dark:border-neutral-700 hover:border-plasma-400'
+                                    }`}
+                                    onClick={() => handleStepClick(step)}
+                                >
                                    <div className="flex items-center gap-3">
                                       <div className="cursor-move text-gray-300 hover:text-gray-500"><GripVertical size={16} /></div>
                                       <div className={`p-2 rounded-lg ${
@@ -549,11 +576,13 @@ export const Automation: React.FC = () => {
                                       </div>
                                       <div>
                                          <div className="font-bold text-sm text-gray-900 dark:text-white">{step.label}</div>
-                                         <div className="text-xs text-gray-500 font-mono">{step.config}</div>
+                                         <div className="text-xs text-gray-500 font-mono flex items-center gap-1">
+                                             {step.config} <Edit3 size={10} className="opacity-50" />
+                                         </div>
                                       </div>
                                    </div>
                                    <button 
-                                     onClick={() => setBuilderSteps(builderSteps.filter(s => s.id !== step.id))}
+                                     onClick={(e) => { e.stopPropagation(); setBuilderSteps(builderSteps.filter(s => s.id !== step.id)); }}
                                      className="text-gray-300 hover:text-red-500 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                                    >
                                       <Trash2 size={16} />
@@ -575,8 +604,53 @@ export const Automation: React.FC = () => {
                  </div>
               </div>
 
+               {/* Step Configuration Popover/Modal */}
+               {configuringStep && (
+                   <div className="absolute inset-0 z-20 bg-neutral-900/20 backdrop-blur-sm flex items-center justify-center p-4">
+                       <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6 animate-in zoom-in-95">
+                           <div className="flex justify-between items-center mb-4">
+                               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                                   <Settings size={18} className="text-plasma-600"/> Configure Step
+                               </h3>
+                               <button onClick={() => setConfiguringStep(null)}><X size={20} className="text-gray-400 hover:text-gray-600"/></button>
+                           </div>
+                           
+                           <div className="space-y-4">
+                               <div>
+                                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Step Type</label>
+                                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                                       {configuringStep.label}
+                                   </div>
+                               </div>
+                               <div>
+                                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Configuration Parameter</label>
+                                   <input 
+                                       type="text" 
+                                       className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm focus:ring-2 focus:ring-plasma-500 outline-none dark:text-white"
+                                       placeholder={
+                                           configuringStep.label === 'Schedule' ? 'e.g. Every 24h' : 
+                                           configuringStep.label === 'Alert' ? 'e.g. CPU > 80%' : 
+                                           configuringStep.label === 'Notify' ? 'e.g. #alerts-channel' :
+                                           'Enter value...'
+                                       }
+                                       value={tempConfigValue}
+                                       onChange={(e) => setTempConfigValue(e.target.value)}
+                                       autoFocus
+                                   />
+                               </div>
+                           </div>
+
+                           <div className="mt-6 flex justify-end gap-2">
+                               <Button variant="secondary" size="sm" onClick={() => setConfiguringStep(null)}>Cancel</Button>
+                               <Button size="sm" onClick={saveStepConfig}>Save Configuration</Button>
+                           </div>
+                       </div>
+                   </div>
+               )}
+
            </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
