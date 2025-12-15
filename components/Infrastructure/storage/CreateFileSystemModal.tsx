@@ -7,12 +7,13 @@ import { LOCATIONS, REGIONS } from '../../../constants';
 
 interface CreateFileSystemModalProps {
   onClose: () => void;
+  onCreate: (data: { name: string; region: string; size: string; mountPoint: string; cost: number }) => void;
 }
 
 // Custom steps matching the screenshot
 const SIZE_STEPS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 
-export const CreateFileSystemModal: React.FC<CreateFileSystemModalProps> = ({ onClose }) => {
+export const CreateFileSystemModal: React.FC<CreateFileSystemModalProps> = ({ onClose, onCreate }) => {
   const [activeRegion, setActiveRegion] = useState('All Locations');
   const [locationSearch, setLocationSearch] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('us-e');
@@ -34,7 +35,13 @@ export const CreateFileSystemModal: React.FC<CreateFileSystemModalProps> = ({ on
   }, [activeRegion, locationSearch]);
 
   const handleCreate = () => {
-    // Logic to create file system would go here
+    onCreate({
+      name: label,
+      region: selectedLocation,
+      size: `${size} GB`,
+      mountPoint: `/mnt/${label.toLowerCase().replace(/\s+/g, '-')}`,
+      cost: price
+    });
     onClose();
   };
 

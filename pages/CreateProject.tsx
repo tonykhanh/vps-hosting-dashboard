@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from '../context/ThemeContext';
 import { useProjects } from '../context/ProjectContext';
 import { Button } from '../components/Button';
-import { BLUEPRINTS } from '../constants';
+import { BLUEPRINTS, LOCATIONS, REGIONS } from '../constants';
 import { Blueprint, Project, ProjectStatus } from '../types';
 import { 
   Check, ChevronRight, Server, Globe, ShieldCheck, Box, 
@@ -28,14 +28,23 @@ export const CreateProject: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     domain: '',
-    region: 'sg-1',
+    region: 'sg',
   });
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployLogs, setDeployLogs] = useState<string[]>([]);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
+  
+  // Location Selection State
+  const [activeRegionTab, setActiveRegionTab] = useState('All Locations');
 
   // Derived state for success view
   const isSuccess = currentStep === 3 && !isDeploying;
+
+  const filteredLocations = useMemo(() => {
+    return LOCATIONS.filter(loc => {
+      return activeRegionTab === 'All Locations' || loc.region === activeRegionTab;
+    });
+  }, [activeRegionTab]);
 
   // Hydrate from AI Intent
   useEffect(() => {
@@ -46,10 +55,13 @@ export const CreateProject: React.FC = () => {
       const matchedBlueprint = BLUEPRINTS.find(bp => bp.id === aiConfig.blueprintId);
       if (matchedBlueprint) {
         setSelectedBlueprint(matchedBlueprint);
+        // Map simplified AI region or use default if invalid
+        const validRegion = LOCATIONS.find(l => l.id === aiConfig.region) ? aiConfig.region : 'sg';
+        
         setFormData({
           name: aiConfig.name || '',
           domain: aiConfig.domain || '',
-          region: aiConfig.region || 'sg-1',
+          region: validRegion,
         });
         setAiInsight(aiConfig.reasoning);
         setCurrentStep(1);
@@ -122,8 +134,8 @@ export const CreateProject: React.FC = () => {
   };
 
   const getRegionName = (id: string) => {
-    const map: Record<string, string> = { 'sg-1': 'Singapore', 'vn-1': 'Vietnam', 'jp-1': 'Tokyo', 'us-west': 'California' };
-    return map[id] || id;
+    const loc = LOCATIONS.find(l => l.id === id);
+    return loc ? `${loc.name}, ${loc.region}` : id;
   };
 
   return (
@@ -223,7 +235,7 @@ export const CreateProject: React.FC = () => {
 
            {/* STEP 1: CONFIGURATION */}
            {currentStep === 1 && (
-              <div className="max-w-2xl mx-auto space-y-10 animate-in fade-in slide-in-from-right-8 duration-500">
+              <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-right-8 duration-500 pb-10">
                  
                  {/* AI Suggestion Box */}
                  {aiInsight && (
@@ -273,29 +285,57 @@ export const CreateProject: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Region Selection */}
+                    {/* Physical Location Selection */}
                     <div>
                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 ml-1">Physical Location</label>
-                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {['sg-1', 'vn-1', 'jp-1', 'us-west'].map((region) => (
-                             <button
-                                key={region}
-                                onClick={() => setFormData({...formData, region})}
-                                className={`
-                                   relative p-4 rounded-xl border transition-all duration-300 flex flex-col items-center gap-2 group
-                                   ${formData.region === region 
-                                      ? 'bg-plasma-50 dark:bg-plasma-900/20 border-plasma-500 text-plasma-700 dark:text-plasma-400 shadow-md' 
-                                      : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-plasma-300 dark:hover:border-white/30'}
-                                `}
-                             >
-                                <MapPin size={20} className={formData.region === region ? "animate-bounce" : ""} />
-                                <span className="font-bold text-sm">{getRegionName(region)}</span>
-                                <span className="text-[10px] uppercase font-mono opacity-70">{region}</span>
-                                {formData.region === region && (
-                                   <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-plasma-500"></div>
-                                )}
-                             </button>
-                          ))}
+                       
+                       <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
+                          {/* Region Tabs */}
+                          <div className="flex border-b border-gray-100 dark:border-white/10 overflow-x-auto no-scrollbar">
+                             {['All Locations', ...REGIONS].map(region => (
+                                <button
+                                   key={region}
+                                   onClick={() => setActiveRegionTab(region)}
+                                   className={`
+                                      px-6 py-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2
+                                      ${activeRegionTab === region 
+                                         ? 'border-plasma-500 text-plasma-600 dark:text-plasma-400 bg-plasma-50/50 dark:bg-plasma-500/10' 
+                                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}
+                                   `}
+                                >
+                                   {region}
+                                </button>
+                             ))}
+                          </div>
+                          
+                          {/* Locations Grid */}
+                          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto custom-scrollbar bg-gray-50/50 dark:bg-white/5">
+                             {filteredLocations.map(loc => {
+                                const isSelected = formData.region === loc.id;
+                                return (
+                                <div 
+                                   key={loc.id}
+                                   onClick={() => setFormData({...formData, region: loc.id})}
+                                   className={`
+                                      p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-4 relative overflow-hidden group
+                                      ${isSelected 
+                                         ? 'border-plasma-500 bg-white dark:bg-neutral-800 shadow-lg ring-1 ring-plasma-500/20 scale-[1.02]' 
+                                         : 'border-gray-200 dark:border-white/5 bg-white dark:bg-neutral-800 hover:border-plasma-300 dark:hover:border-white/20'}
+                                   `}
+                                >
+                                   <span className="text-4xl filter drop-shadow-sm">{loc.flag}</span>
+                                   <div className="overflow-hidden relative z-10">
+                                      <div className={`font-bold text-lg truncate transition-colors ${isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{loc.name}</div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-500 font-mono uppercase truncate tracking-wider">{loc.id}</div>
+                                   </div>
+                                   {isSelected && (
+                                      <div className="absolute top-0 right-0 p-2 bg-plasma-500 text-white rounded-bl-xl shadow-sm">
+                                         <Check size={16} strokeWidth={3} />
+                                      </div>
+                                   )}
+                                </div>
+                             )})}
+                          </div>
                        </div>
                     </div>
                  </div>
@@ -304,7 +344,7 @@ export const CreateProject: React.FC = () => {
 
            {/* STEP 2: REVIEW */}
            {currentStep === 2 && selectedBlueprint && (
-              <div className="max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+              <div className="max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-500">
                  
                  <div className="relative bg-white dark:bg-[#111] rounded-[2rem] p-1 shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
                     {/* Holographic Edge */}
@@ -324,28 +364,28 @@ export const CreateProject: React.FC = () => {
                           </div>
                        </div>
 
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/5">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="p-6 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                              <span className="text-xs text-gray-400 uppercase font-bold">Blueprint Type</span>
-                             <div className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1">{selectedBlueprint.name}</div>
+                             <div className="text-xl font-bold text-gray-800 dark:text-gray-200 mt-2">{selectedBlueprint.name}</div>
                           </div>
-                          <div className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/5">
+                          <div className="p-6 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
                              <span className="text-xs text-gray-400 uppercase font-bold">Target Region</span>
-                             <div className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span> {getRegionName(formData.region)}
+                             <div className="text-xl font-bold text-gray-800 dark:text-gray-200 mt-2 flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> {getRegionName(formData.region)}
                              </div>
                           </div>
                        </div>
 
-                       <div className="border-t border-dashed border-gray-300 dark:border-white/10 pt-6">
+                       <div className="border-t border-dashed border-gray-300 dark:border-white/10 pt-8">
                           <div className="flex justify-between items-end">
                              <div>
                                 <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Estimated Resources</span>
-                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{selectedBlueprint.recommendedSize}</div>
+                                <div className="text-lg font-medium text-gray-700 dark:text-gray-300">{selectedBlueprint.recommendedSize}</div>
                              </div>
                              <div className="text-right">
                                 <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Monthly Cost</span>
-                                <div className="text-2xl font-bold text-gray-900 dark:text-white">$20.00</div>
+                                <div className="text-3xl font-bold text-gray-900 dark:text-white">$20.00</div>
                              </div>
                           </div>
                        </div>

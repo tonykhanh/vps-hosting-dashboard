@@ -1,28 +1,82 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Disc, Plus, CheckCircle2, Trash2, X, Upload, Globe, Download, MoreVertical } from 'lucide-react';
+import { Disc, Plus, CheckCircle2, Trash2, X, Upload, Globe, Download, MoreVertical, Loader2, Play } from 'lucide-react';
 import { Button } from '../../Button';
 import { IMAGES } from '../../../constants';
+import { DeleteIsoModal } from './DeleteIsoModal';
+import { BootIsoModal } from './BootIsoModal';
 
 // Local Mock Data
-const CUSTOM_ISOS = [
+const INITIAL_CUSTOM_ISOS = [
   { id: 'iso-1', name: 'Windows_Server_2022_Custom.iso', size: '4.5 GB', status: 'Available', uploaded: '2023-10-15' },
   { id: 'iso-2', name: 'Arch_Linux_Hardened.iso', size: '800 MB', status: 'Available', uploaded: '2023-11-02' }
 ];
 
 export const IsoManager: React.FC = () => {
+  const [customIsos, setCustomIsos] = useState(INITIAL_CUSTOM_ISOS);
   const [showAddISOModal, setShowAddISOModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'url' | 'upload'>('url');
+  
+  // Add Form State
   const [newISOUrl, setNewISOUrl] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [bootTarget, setBootTarget] = useState<{ id: string; name: string } | null>(null);
 
   const toggleDropdown = (id: string) => {
-    if (activeDropdown === id) {
-      setActiveDropdown(null);
-    } else {
-      setActiveDropdown(id);
+    setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setUploadFile(e.target.files[0]);
     }
+  };
+
+  const handleAddISO = () => {
+    setIsUploading(true);
+    
+    // Simulate upload/download delay
+    setTimeout(() => {
+        const name = activeTab === 'url' 
+            ? (newISOUrl.split('/').pop() || 'remote-image.iso') 
+            : (uploadFile?.name || 'uploaded-image.iso');
+            
+        const size = activeTab === 'url' 
+            ? 'Unknown' 
+            : `${(uploadFile ? uploadFile.size / (1024 * 1024 * 1024) : 0).toFixed(2)} GB`;
+
+        const newIso = {
+            id: `iso-${Date.now()}`,
+            name: name,
+            size: size,
+            status: 'Available',
+            uploaded: new Date().toISOString().split('T')[0]
+        };
+
+        setCustomIsos([newIso, ...customIsos]);
+        setIsUploading(false);
+        setShowAddISOModal(false);
+        setNewISOUrl('');
+        setUploadFile(null);
+    }, 2000);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setCustomIsos(prev => prev.filter(iso => iso.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleBootConfirm = (instanceId: string, instanceName: string) => {
+    // In a real app, this would make an API call to attach ISO and reboot
+    console.log(`Booting ${instanceName} with ISO ${bootTarget?.name}`);
+    setBootTarget(null);
   };
 
   return (
@@ -44,7 +98,7 @@ export const IsoManager: React.FC = () => {
                 <Disc size={20} className="text-plasma-600"/> My Custom ISOs
              </h3>
              <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-neutral-700 rounded text-gray-600 dark:text-gray-300">
-                {CUSTOM_ISOS.length} / 5 Free Slots
+                {customIsos.length} / 5 Free Slots
              </span>
           </div>
           <div className="overflow-x-auto overflow-y-visible">
@@ -59,7 +113,7 @@ export const IsoManager: React.FC = () => {
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                   {CUSTOM_ISOS.map(iso => (
+                   {customIsos.map((iso, index) => (
                       <tr key={iso.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative group">
                          <td className="px-6 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-3">
                             <div className="p-2 bg-gray-100 dark:bg-neutral-700 rounded-lg text-gray-500">
@@ -84,9 +138,26 @@ export const IsoManager: React.FC = () => {
 
                             {/* Dropdown Menu */}
                             {activeDropdown === iso.id && (
-                                <div className="absolute right-8 top-8 w-32 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                    <button className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                        <Trash2 size={14} /> Remove
+                                <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= customIsos.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                    <button 
+                                      onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          setBootTarget(iso); 
+                                          setActiveDropdown(null); 
+                                      }}
+                                      className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                    >
+                                        <Play size={14} /> Boot Server
+                                    </button>
+                                    <button 
+                                      onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          setDeleteTarget(iso); 
+                                          setActiveDropdown(null); 
+                                      }}
+                                      className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                    >
+                                        <Trash2 size={14} /> Delete
                                     </button>
                                 </div>
                             )}
@@ -95,6 +166,11 @@ export const IsoManager: React.FC = () => {
                    ))}
                 </tbody>
              </table>
+             {customIsos.length === 0 && (
+                <div className="p-8 text-center text-gray-400 text-sm">
+                   No custom ISOs uploaded. Add one to get started.
+                </div>
+             )}
           </div>
        </div>
 
@@ -105,7 +181,7 @@ export const IsoManager: React.FC = () => {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
              {IMAGES.isoLibrary.map(iso => (
-                <div key={iso.id} className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl p-5 hover:shadow-md hover:border-plasma-300 dark:hover:border-plasma-500/50 transition-all cursor-pointer group">
+                <div key={iso.id} className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl p-5 hover:shadow-md hover:border-plasma-300 dark:hover:border-plasma-500/50 transition-all cursor-pointer group relative overflow-hidden">
                    <div className="flex justify-between items-start mb-3">
                       <div className="p-3 bg-gray-50 dark:bg-neutral-700 rounded-xl text-gray-600 dark:text-gray-300 group-hover:bg-plasma-50 dark:group-hover:bg-plasma-900/20 group-hover:text-plasma-600 transition-colors">
                          <iso.icon size={24} />
@@ -117,6 +193,17 @@ export const IsoManager: React.FC = () => {
                    <div className="font-bold text-gray-900 dark:text-white text-lg">{iso.name}</div>
                    <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1 bg-gray-100 dark:bg-neutral-700/50 px-2 py-1 rounded w-fit">
                       {iso.version}
+                   </div>
+                   
+                   {/* Overlay Action */}
+                   <div className="absolute inset-0 bg-white/90 dark:bg-neutral-900/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        size="sm" 
+                        className="shadow-lg"
+                        onClick={() => setBootTarget(iso)}
+                      >
+                        Boot Server
+                      </Button>
                    </div>
                 </div>
              ))}
@@ -169,25 +256,52 @@ export const IsoManager: React.FC = () => {
                        </div>
                     </div>
                  ) : (
-                    <div className="border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-plasma-400 transition-colors bg-gray-50 dark:bg-neutral-800/50 cursor-pointer">
+                    <label className="border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-plasma-400 transition-colors bg-gray-50 dark:bg-neutral-800/50 cursor-pointer">
+                        <input type="file" className="hidden" accept=".iso" onChange={handleFileSelect} />
                         <div className="w-12 h-12 bg-white dark:bg-neutral-800 rounded-full flex items-center justify-center shadow-sm mb-3">
                            <Upload size={20} className="text-plasma-600" />
                         </div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ISO files up to 10GB allowed</p>
-                    </div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{uploadFile ? uploadFile.name : 'Click to upload or drag and drop'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{uploadFile ? `${(uploadFile.size / 1024 / 1024).toFixed(2)} MB` : 'ISO files up to 10GB allowed'}</p>
+                    </label>
                  )}
               </div>
 
               <div className="p-6 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-2 bg-gray-50 dark:bg-neutral-900">
                  <Button variant="secondary" onClick={() => setShowAddISOModal(false)} className="dark:bg-neutral-800 dark:text-white dark:border-neutral-700">Cancel</Button>
-                 <Button className="gap-2 shadow-lg shadow-plasma-500/20" onClick={() => setShowAddISOModal(false)}>
-                    {activeTab === 'url' ? <><Globe size={16}/> Fetch URL</> : <><Upload size={16}/> Upload ISO</>}
+                 <Button 
+                    className="gap-2 shadow-lg shadow-plasma-500/20" 
+                    onClick={handleAddISO}
+                    disabled={isUploading || (activeTab === 'url' && !newISOUrl) || (activeTab === 'upload' && !uploadFile)}
+                    isLoading={isUploading}
+                 >
+                    {isUploading 
+                        ? 'Adding...' 
+                        : activeTab === 'url' ? <><Globe size={16}/> Fetch URL</> : <><Upload size={16}/> Upload ISO</>
+                    }
                  </Button>
               </div>
            </div>
         </div>,
         document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+         <DeleteIsoModal 
+            isoName={deleteTarget.name}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleDeleteConfirm}
+         />
+      )}
+
+      {/* Boot ISO Modal */}
+      {bootTarget && (
+         <BootIsoModal 
+            isoName={bootTarget.name}
+            onClose={() => setBootTarget(null)}
+            onBoot={handleBootConfirm}
+         />
       )}
     </div>
   );

@@ -81,6 +81,73 @@ const getPriorityColor = (p: string) => {
   }
 };
 
+const getRelativeLabel = (date: Date): string => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(date);
+  // Compare date parts only for Today/Tomorrow logic
+  const dZero = new Date(d);
+  dZero.setHours(0, 0, 0, 0);
+  
+  const diffTime = dZero.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  // Format time HH:mm
+  const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  if (diffDays === 0) return `Today, ${timeStr}`;
+  if (diffDays === 1) return `Tomorrow, ${timeStr}`;
+  if (diffDays === 7) return `Next Week, ${timeStr}`;
+  
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + `, ${timeStr}`;
+};
+
+const getDatePickerValue = (dateString: string) => {
+  const today = new Date();
+  let targetDate = new Date();
+  
+  // Set default time to 09:00 for task due dates if not specified
+  targetDate.setHours(9, 0, 0, 0);
+
+  const lower = dateString?.toLowerCase() || '';
+
+  if (lower.includes('today')) {
+      // keep targetDate as today
+  } else if (lower.includes('tomorrow')) {
+      targetDate.setDate(today.getDate() + 1);
+  } else if (lower.includes('next week')) {
+      targetDate.setDate(today.getDate() + 7);
+  } else if (!dateString || lower.includes('no date')) {
+      return '';
+  } else {
+      // Try parsing the full string
+      const parsed = new Date(dateString);
+      if (!isNaN(parsed.getTime())) {
+          targetDate = parsed;
+      }
+  }
+
+  // If the label has a specific time (comma separated usually from getRelativeLabel), parse it
+  if (dateString && dateString.includes(',')) {
+      const timePart = dateString.split(',')[1].trim();
+      const [hours, minutes] = timePart.split(':').map(Number);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+          targetDate.setHours(hours);
+          targetDate.setMinutes(minutes);
+      }
+  } else if (!dateString.includes('Today') && !dateString.includes('Tomorrow') && !dateString.includes('Next Week')) {
+      // If it's a raw date string without time info, it might default to midnight, let's keep 09:00 default
+  }
+  
+  const yyyy = targetDate.getFullYear();
+  const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(targetDate.getDate()).padStart(2, '0');
+  const hh = String(targetDate.getHours()).padStart(2, '0');
+  const min = String(targetDate.getMinutes()).padStart(2, '0');
+  
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
 // --- Sub-Components ---
 
 const TeamMemberRow: React.FC<{ member: TeamMember }> = ({ member }) => (
@@ -119,25 +186,39 @@ const TaskCard: React.FC<{
     onDragStart={(e) => onDragStart(e, task.id)}
     className="bg-white dark:bg-neutral-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-700 hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative group hover:border-plasma-300 dark:hover:border-plasma-500/50"
   >
-     {task.aiSuggested && (
-        <div className="absolute top-4 right-10 text-indigo-500" title="AI Suggested">
-           <Sparkles size={14} />
-        </div>
-     )}
-
-     {/* Delete Button */}
-     <button 
-        onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-        className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-20"
-     >
-        <Trash2 size={14} />
-     </button>
-
-     <div className="flex justify-between items-start mb-3 pr-8">
+     {/* Header Row */}
+     <div className="flex justify-between items-start mb-3">
        <div className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${getPriorityColor(task.priority)}`}>
           {task.priority}
        </div>
-       <GripVertical size={16} className="text-gray-300 dark:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-4 top-10" />
+       
+       {/* Static Indicator (Visible when NOT hovering) */}
+       <div className="flex items-center gap-2 group-hover:opacity-0 transition-opacity duration-200">
+          {task.aiSuggested && (
+             <div className="text-indigo-500" title="AI Suggested">
+                <Sparkles size={14} />
+             </div>
+          )}
+       </div>
+     </div>
+
+     {/* Hover Toolbar (Absolute Top Right) */}
+     <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm p-1 rounded-lg border border-gray-100 dark:border-neutral-700 shadow-sm z-10">
+        {task.aiSuggested && (
+           <div className="p-1.5 text-indigo-500 border-r border-gray-100 dark:border-neutral-700 mr-0.5">
+              <Sparkles size={14} />
+           </div>
+        )}
+        <button 
+           onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+           title="Delete"
+        >
+           <Trash2 size={14} />
+        </button>
+        <div className="p-1.5 text-gray-300 hover:text-gray-500 dark:text-neutral-500 dark:hover:text-neutral-300 cursor-grab">
+           <GripVertical size={14} />
+        </div>
      </div>
      
      <h4 className="text-base font-bold text-gray-900 dark:text-white mb-4 leading-snug">{task.title}</h4>
@@ -480,7 +561,7 @@ export const Team: React.FC = () => {
       {showAddTaskModal && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
            <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowAddTaskModal(false)} />
-           <div className="relative bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 z-10 flex flex-col">
+           <div className="relative bg-white dark:bg-neutral-900 w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 z-10 flex flex-col">
               
               {/* Header */}
               <div className="p-8 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
@@ -559,10 +640,10 @@ export const Team: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Due Date - Quick Select */}
+                    {/* Due Date - Quick Select & Custom Time */}
                     <div>
                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Calendar size={14} /> Due Date
+                            <Calendar size={14} /> Due Date & Time
                        </label>
                        <div className="grid grid-cols-2 gap-3">
                           {['Today', 'Tomorrow', 'Next Week', 'No Date'].map(date => (
@@ -570,7 +651,7 @@ export const Team: React.FC = () => {
                                 key={date}
                                 onClick={() => setNewTaskForm({...newTaskForm, dueDate: date})}
                                 className={`px-4 py-3 rounded-xl text-xs font-bold transition-all border border-transparent ${
-                                    newTaskForm.dueDate === date 
+                                    newTaskForm.dueDate.startsWith(date) 
                                     ? 'bg-gray-900 text-white dark:bg-white dark:text-black shadow-lg' 
                                     : 'bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-700'
                                 }`}
@@ -580,12 +661,21 @@ export const Team: React.FC = () => {
                           ))}
                        </div>
                        <div className="relative mt-4">
+                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <Calendar size={16} className="text-gray-400" />
+                           </div>
                            <input 
-                              type="text" 
-                              className="w-full px-4 py-3 bg-transparent border-b-2 border-gray-100 dark:border-neutral-800 text-sm focus:border-plasma-500 outline-none text-gray-900 dark:text-white placeholder-gray-400 transition-colors"
-                              placeholder="Or type custom date..."
-                              value={['Today', 'Tomorrow', 'Next Week', 'No Date'].includes(newTaskForm.dueDate) ? '' : newTaskForm.dueDate}
-                              onChange={(e) => setNewTaskForm({...newTaskForm, dueDate: e.target.value})}
+                              type="datetime-local" 
+                              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl text-sm focus:ring-2 focus:ring-plasma-500 outline-none text-gray-900 dark:text-white transition-colors cursor-pointer"
+                              value={getDatePickerValue(newTaskForm.dueDate)}
+                              onChange={(e) => {
+                                  if (!e.target.value) {
+                                      setNewTaskForm({...newTaskForm, dueDate: 'No Date'});
+                                      return;
+                                  }
+                                  const date = new Date(e.target.value);
+                                  setNewTaskForm({...newTaskForm, dueDate: getRelativeLabel(date)});
+                              }}
                            />
                        </div>
                     </div>

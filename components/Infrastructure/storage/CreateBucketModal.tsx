@@ -1,12 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Box, Check, Search, Info, Globe } from 'lucide-react';
+import { X, Box, Check } from 'lucide-react';
 import { Button } from '../../Button';
 import { LOCATIONS, REGIONS } from '../../../constants';
 
 interface CreateBucketModalProps {
   onClose: () => void;
+  onCreate: (data: { name: string; region: string; plan: string; storage: string; bandwidth: string }) => void;
 }
 
 const STORAGE_PLANS = [
@@ -44,7 +45,7 @@ const STORAGE_PLANS = [
   }
 ];
 
-export const CreateBucketModal: React.FC<CreateBucketModalProps> = ({ onClose }) => {
+export const CreateBucketModal: React.FC<CreateBucketModalProps> = ({ onClose, onCreate }) => {
   const [selectedPlan, setSelectedPlan] = useState('performance');
   const [activeRegion, setActiveRegion] = useState('All Locations');
   const [locationSearch, setLocationSearch] = useState('');
@@ -60,7 +61,13 @@ export const CreateBucketModal: React.FC<CreateBucketModalProps> = ({ onClose })
   }, [activeRegion, locationSearch]);
 
   const handleCreate = () => {
-    // Logic to create bucket would go here
+    onCreate({
+      name: label,
+      region: selectedLocation,
+      plan: selectedPlan,
+      storage: '0 GB', // Initial state
+      bandwidth: '0 GB', // Initial state
+    });
     onClose();
   };
 

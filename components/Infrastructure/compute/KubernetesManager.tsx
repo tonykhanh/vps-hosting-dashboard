@@ -8,9 +8,12 @@ import { Button } from '../../Button';
 import { 
   K8S_VERSIONS, LOCATIONS, REGIONS, PLANS_DATA 
 } from '../../../constants';
+import { DeleteClusterModal } from './DeleteClusterModal';
+import { ScaleClusterModal } from './ScaleClusterModal';
+import { ManageClusterModal } from './ManageClusterModal';
 
-// Local Mock Data for Clusters
-const K8S_CLUSTERS = [
+// Initial Mock Data for Clusters
+const INITIAL_CLUSTERS = [
   { 
     id: 'k8s-1', 
     name: 'VKE Cluster', 
@@ -18,7 +21,9 @@ const K8S_CLUSTERS = [
     location: 'New Jersey',
     flag: '🇺🇸',
     status: 'Installing',
-    created: '2025-12-10T03:59:29+00:00'
+    created: '2025-12-10T03:59:29+00:00',
+    nodeCount: 3,
+    plan: 'voc-c-2c-4gb-80s'
   },
   { 
     id: 'k8s-2', 
@@ -27,14 +32,24 @@ const K8S_CLUSTERS = [
     location: 'Singapore',
     flag: '🇸🇬',
     status: 'Running',
-    created: '2025-11-15T12:00:00+00:00'
+    created: '2025-11-15T12:00:00+00:00',
+    nodeCount: 5,
+    plan: 'voc-c-4c-8gb'
   }
 ];
 
 export const KubernetesManager: React.FC = () => {
+  const [clusters, setClusters] = useState(INITIAL_CLUSTERS);
   const [showK8sCreate, setShowK8sCreate] = useState(false);
   const [activeRegion, setActiveRegion] = useState('Americas');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  
+  // Modals State
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [scaleTarget, setScaleTarget] = useState<any>(null);
+  const [manageTarget, setManageTarget] = useState<any>(null);
+
+  // Create Form State
   const [k8sConfig, setK8sConfig] = useState({
     name: '',
     version: K8S_VERSIONS[0],
@@ -52,6 +67,51 @@ export const KubernetesManager: React.FC = () => {
       setActiveDropdown(null);
     } else {
       setActiveDropdown(id);
+    }
+  };
+
+  const handleCreateCluster = () => {
+    const loc = LOCATIONS.find(l => l.id === k8sConfig.location);
+    const newCluster = {
+      id: `k8s-${Date.now()}`,
+      name: k8sConfig.name || 'Untitled Cluster',
+      version: k8sConfig.version,
+      location: loc?.name || 'Unknown',
+      flag: loc?.flag || '🏳️',
+      status: 'Provisioning',
+      created: new Date().toISOString(),
+      nodeCount: k8sConfig.nodeCount,
+      plan: k8sConfig.poolPlan
+    };
+    
+    setClusters([newCluster, ...clusters]);
+    setShowK8sCreate(false);
+    // Reset config (optional)
+    setK8sConfig(prev => ({...prev, name: '', nodeCount: 3}));
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setClusters(prev => prev.filter(c => c.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleScaleConfirm = (newCount: number) => {
+    if (scaleTarget) {
+      setClusters(prev => prev.map(c => c.id === scaleTarget.id ? { ...c, nodeCount: newCount } : c));
+      setScaleTarget(null);
+    }
+  };
+
+  const handleClusterUpdate = (clusterId: string, updates: any) => {
+    setClusters(prev => prev.map(c => c.id === clusterId ? { ...c, ...updates } : c));
+    
+    // If status was updated to 'Upgrading', auto-revert to 'Running' after some time for demo
+    if (updates.status === 'Upgrading') {
+        setTimeout(() => {
+            setClusters(prev => prev.map(c => c.id === clusterId ? { ...c, status: 'Running' } : c));
+        }, 5000);
     }
   };
 
@@ -84,13 +144,13 @@ export const KubernetesManager: React.FC = () => {
                          <tr>
                             <th className="px-6 py-4">Name</th>
                             <th className="px-6 py-4">Location</th>
-                            <th className="px-6 py-4">Created</th>
+                            <th className="px-6 py-4">Nodes</th>
                             <th className="px-6 py-4">Status</th>
                             <th className="px-6 py-4 text-right"></th>
                          </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                         {K8S_CLUSTERS.map((cluster) => (
+                         {clusters.map((cluster, index) => (
                             <tr key={cluster.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative group">
                                <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
@@ -99,7 +159,7 @@ export const KubernetesManager: React.FC = () => {
                                      </div>
                                      <div>
                                         <div className="font-bold text-gray-900 dark:text-white">{cluster.name}</div>
-                                        <div className="text-xs text-gray-500">{cluster.id}</div>
+                                        <div className="text-xs text-gray-500">{cluster.version}</div>
                                      </div>
                                   </div>
                                </td>
@@ -110,16 +170,16 @@ export const KubernetesManager: React.FC = () => {
                                   </div>
                                </td>
                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
-                                  {new Date(cluster.created).toLocaleDateString()}
+                                  {cluster.nodeCount} Nodes
                                </td>
                                <td className="px-6 py-4">
                                   <div className="flex items-center gap-2">
-                                     {cluster.status === 'Installing' ? (
+                                     {cluster.status === 'Installing' || cluster.status === 'Provisioning' || cluster.status === 'Upgrading' ? (
                                         <Loader2 size={16} className="text-amber-500 animate-spin" />
                                      ) : (
                                         <CheckCircle2 size={16} className="text-green-500" />
                                      )}
-                                     <span className={`text-sm font-medium ${cluster.status === 'Installing' ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}`}>
+                                     <span className={`text-sm font-medium ${cluster.status === 'Installing' || cluster.status === 'Provisioning' || cluster.status === 'Upgrading' ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}`}>
                                         {cluster.status}
                                      </span>
                                   </div>
@@ -134,14 +194,23 @@ export const KubernetesManager: React.FC = () => {
 
                                   {/* Dropdown Menu */}
                                   {activeDropdown === cluster.id && (
-                                     <div className="absolute right-8 top-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                        <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                     <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= clusters.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); setManageTarget(cluster); setActiveDropdown(null); }}
+                                          className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                        >
                                            <Settings size={14} /> Manage
                                         </button>
-                                        <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); setScaleTarget(cluster); setActiveDropdown(null); }}
+                                          className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                        >
                                            <Scaling size={14} /> Scale Pool
                                         </button>
-                                        <button className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(cluster); setActiveDropdown(null); }}
+                                          className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                        >
                                            <Trash2 size={14} /> Delete
                                         </button>
                                      </div>
@@ -151,6 +220,11 @@ export const KubernetesManager: React.FC = () => {
                          ))}
                       </tbody>
                    </table>
+                   {clusters.length === 0 && (
+                      <div className="p-8 text-center text-gray-400 text-sm">
+                         No active clusters. Create one to get started.
+                      </div>
+                   )}
                 </div>
              </div>
           </>
@@ -404,13 +478,38 @@ export const KubernetesManager: React.FC = () => {
                             <div className="text-sm font-medium text-gray-300">${(k8sCost / 730).toFixed(2)}/hr</div>
                         </div>
                     </div>
-                    <Button size="lg" className="w-full md:w-auto px-10 py-4 text-base font-bold bg-plasma-600 hover:bg-plasma-500 border-none text-white shadow-lg shadow-plasma-500/30" onClick={() => setShowK8sCreate(false)}>
+                    <Button size="lg" className="w-full md:w-auto px-10 py-4 text-base font-bold bg-plasma-600 hover:bg-plasma-500 border-none text-white shadow-lg shadow-plasma-500/30" onClick={handleCreateCluster} disabled={!k8sConfig.name}>
                         Deploy Now
                     </Button>
                 </div>
 
              </div>
           </div>
+       )}
+
+       {/* Modals */}
+       {deleteTarget && (
+          <DeleteClusterModal 
+             clusterName={deleteTarget.name}
+             onClose={() => setDeleteTarget(null)}
+             onConfirm={handleDeleteConfirm}
+          />
+       )}
+
+       {scaleTarget && (
+          <ScaleClusterModal 
+             cluster={scaleTarget}
+             onClose={() => setScaleTarget(null)}
+             onScale={handleScaleConfirm}
+          />
+       )}
+
+       {manageTarget && (
+          <ManageClusterModal 
+             cluster={manageTarget}
+             onClose={() => setManageTarget(null)}
+             onUpdate={handleClusterUpdate}
+          />
        )}
     </div>
   );

@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
 import { Network, Plus, MoreVertical, Trash2, ArrowLeft, CheckCircle2, Globe, Settings, Route, Save, X } from 'lucide-react';
 import { Button } from '../../Button';
 import { LOCATIONS, REGIONS } from '../../../constants';
 import { ProjectStatus } from '../../../types';
+import { DeleteVpcModal } from './DeleteVpcModal';
+import { ManageVpcModal } from './ManageVpcModal';
 
 // Mock Data
 const VPC_LIST = [
@@ -15,6 +18,10 @@ export const VpcManager: React.FC = () => {
   const [view, setView] = useState<'list' | 'create'>('list');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
+  // Modals
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [manageTarget, setManageTarget] = useState<any>(null);
+
   // Create Form State
   const [activeRegion, setActiveRegion] = useState('Americas');
   const [createForm, setCreateForm] = useState({
@@ -55,11 +62,15 @@ export const VpcManager: React.FC = () => {
     });
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this VPC Network?')) {
-      setVpcs(prev => prev.filter(v => v.id !== id));
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setVpcs(prev => prev.filter(v => v.id !== deleteTarget.id));
+      setDeleteTarget(null);
     }
-    setActiveDropdown(null);
+  };
+
+  const handleUpdateVpc = (id: string, updates: any) => {
+    setVpcs(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
   };
 
   const addRoute = () => {
@@ -339,7 +350,7 @@ export const VpcManager: React.FC = () => {
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                      {vpcs.map((vpc) => (
+                      {vpcs.map((vpc, index) => (
                           <tr key={vpc.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative">
                               <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{vpc.name}</td>
                               <td className="px-6 py-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -361,12 +372,23 @@ export const VpcManager: React.FC = () => {
                                   </button>
                                   
                                   {activeDropdown === vpc.id && (
-                                      <div className="absolute right-8 top-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                          <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                      <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= vpcs.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                          <button 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                setManageTarget(vpc); 
+                                                setActiveDropdown(null); 
+                                            }}
+                                            className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                          >
                                               <Settings size={14} /> Manage
                                           </button>
                                           <button 
-                                            onClick={() => handleDelete(vpc.id)}
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                setDeleteTarget(vpc); 
+                                                setActiveDropdown(null); 
+                                            }}
                                             className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                                           >
                                               <Trash2 size={14} /> Delete
@@ -380,6 +402,24 @@ export const VpcManager: React.FC = () => {
               </table>
           </div>
        </div>
+
+       {/* Delete Confirmation Modal */}
+       {deleteTarget && (
+          <DeleteVpcModal 
+             vpcName={deleteTarget.name}
+             onClose={() => setDeleteTarget(null)}
+             onConfirm={handleDeleteConfirm}
+          />
+       )}
+
+       {/* Manage Modal */}
+       {manageTarget && (
+          <ManageVpcModal 
+             vpc={manageTarget}
+             onClose={() => setManageTarget(null)}
+             onUpdate={handleUpdateVpc}
+          />
+       )}
     </div>
   );
 };

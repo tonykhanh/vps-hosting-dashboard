@@ -11,11 +11,15 @@ import { SshKeyManager } from '../components/Infrastructure/compute/SshKeyManage
 import { ScriptManager } from '../components/Infrastructure/compute/ScriptManager';
 import { ServerlessManager } from '../components/Infrastructure/compute/ServerlessManager';
 import { DeployServerModal } from '../components/Infrastructure/compute/DeployServerModal';
+import { VPS_LIST } from '../constants';
 
 export const VPS: React.FC = () => {
   const [subSection, setSubSection] = useState<'instances' | 'kubernetes' | 'serverless' | 'iso' | 'scripts' | 'ssh'>('instances');
   const [activeTab, setActiveTab] = useState('overview'); 
   const [showDeployModal, setShowDeployModal] = useState(false);
+  
+  // Lifted state for instances list
+  const [instances, setInstances] = useState(VPS_LIST);
 
   const navItems = useMemo(() => [
     { 
@@ -42,6 +46,10 @@ export const VPS: React.FC = () => {
     { id: 'ssh', label: 'SSH Keys', icon: Key, desc: 'Access credentials.' },
   ], []);
 
+  const handleDeployInstance = (newInstance: any) => {
+    setInstances(prev => [newInstance, ...prev]);
+  };
+
   return (
     <>
       <InfrastructureLayout
@@ -56,7 +64,13 @@ export const VPS: React.FC = () => {
           onClick: () => setShowDeployModal(true)
         } : undefined}
       >
-         {subSection === 'instances' && <InstancesList activeTab={activeTab} />}
+         {subSection === 'instances' && (
+            <InstancesList 
+               activeTab={activeTab} 
+               instances={instances}
+               setInstances={setInstances}
+            />
+         )}
          {subSection === 'kubernetes' && <KubernetesManager />}
          {subSection === 'serverless' && <ServerlessManager />}
          {subSection === 'iso' && <IsoManager />}
@@ -64,7 +78,12 @@ export const VPS: React.FC = () => {
          {subSection === 'scripts' && <ScriptManager />}
       </InfrastructureLayout>
 
-      {showDeployModal && <DeployServerModal onClose={() => setShowDeployModal(false)} />}
+      {showDeployModal && (
+         <DeployServerModal 
+            onClose={() => setShowDeployModal(false)} 
+            onDeploy={handleDeployInstance}
+         />
+      )}
     </>
   );
 };

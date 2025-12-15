@@ -1,7 +1,12 @@
+
 import React, { useState } from 'react';
 import { FolderOpen, Plus, MoreVertical, Server, CheckCircle2, Globe, Settings, Trash2, MapPin } from 'lucide-react';
 import { Button } from '../../Button';
 import { CreateFileSystemModal } from './CreateFileSystemModal';
+import { ResizeFileSystemModal } from './ResizeFileSystemModal';
+import { AccessControlModal } from './AccessControlModal';
+import { DeleteFileSystemModal } from './DeleteFileSystemModal';
+import { MountInstructionsModal } from './MountInstructionsModal';
 
 const MOCK_FILESYSTEMS = [
   { 
@@ -26,11 +31,45 @@ const MOCK_FILESYSTEMS = [
 
 export const FileSystemManager: React.FC = () => {
   const [filesystems, setFilesystems] = useState(MOCK_FILESYSTEMS);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [resizeTarget, setResizeTarget] = useState<any>(null);
+  const [accessControlTarget, setAccessControlTarget] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [instructionsTarget, setInstructionsTarget] = useState<any>(null);
 
   const toggleDropdown = (id: string) => {
     setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
+  const handleCreateFileSystem = (data: { name: string; region: string; size: string; mountPoint: string; cost: number }) => {
+    const newFs = {
+      id: `fs-${Date.now()}`,
+      name: data.name,
+      region: data.region,
+      size: data.size,
+      mountPoint: data.mountPoint,
+      status: 'active',
+      cost: data.cost
+    };
+    setFilesystems([...filesystems, newFs]);
+    setShowAddModal(false);
+  };
+
+  const handleResizeConfirm = (newSize: string, newCost: number) => {
+    if (resizeTarget) {
+      setFilesystems(prev => prev.map(fs => fs.id === resizeTarget.id ? { ...fs, size: newSize, cost: newCost } : fs));
+      setResizeTarget(null);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setFilesystems(prev => prev.filter(fs => fs.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -46,7 +85,7 @@ export const FileSystemManager: React.FC = () => {
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filesystems.map(fs => (
+          {filesystems.map((fs, index) => (
              <div key={fs.id} className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all group relative">
                 <div className="flex justify-between items-start mb-4">
                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors">
@@ -60,22 +99,31 @@ export const FileSystemManager: React.FC = () => {
                         onClick={(e) => { e.stopPropagation(); toggleDropdown(fs.id); }}
                         className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-lg text-gray-400"
                       >
-                         <MoreVertical size={16} />
+                         <MoreVertical size={16} className="rotate-90" />
                       </button>
                    </div>
                 </div>
                 
                 {/* Dropdown */}
                 {activeDropdown === fs.id && (
-                   <div className="absolute right-6 top-14 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                      <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                   <div className={`absolute right-6 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= filesystems.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-14 origin-top-right'}`}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setResizeTarget(fs); setActiveDropdown(null); }}
+                        className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                      >
                          <Settings size={14} /> Resize
                       </button>
-                      <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setAccessControlTarget(fs); setActiveDropdown(null); }}
+                        className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                      >
                          <Globe size={14} /> Access Control
                       </button>
                       <div className="h-px bg-gray-100 dark:bg-neutral-700 my-1"></div>
-                      <button className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(fs); setActiveDropdown(null); }}
+                        className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                      >
                          <Trash2 size={14} /> Delete
                       </button>
                    </div>
@@ -102,7 +150,12 @@ export const FileSystemManager: React.FC = () => {
                 </div>
 
                 <div className="mt-6">
-                   <Button size="sm" variant="secondary" className="w-full text-xs dark:bg-neutral-700 dark:text-white dark:border-neutral-600">
+                   <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="w-full text-xs dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                      onClick={() => setInstructionsTarget(fs)}
+                   >
                       Instructions
                    </Button>
                 </div>
@@ -121,7 +174,42 @@ export const FileSystemManager: React.FC = () => {
           </div>
        </div>
 
-       {showAddModal && <CreateFileSystemModal onClose={() => setShowAddModal(false)} />}
+       {showAddModal && (
+          <CreateFileSystemModal 
+             onClose={() => setShowAddModal(false)} 
+             onCreate={handleCreateFileSystem}
+          />
+       )}
+
+       {resizeTarget && (
+          <ResizeFileSystemModal 
+             fileSystem={resizeTarget}
+             onClose={() => setResizeTarget(null)}
+             onResize={handleResizeConfirm}
+          />
+       )}
+
+       {accessControlTarget && (
+          <AccessControlModal 
+             fileSystemName={accessControlTarget.name}
+             onClose={() => setAccessControlTarget(null)}
+          />
+       )}
+
+       {deleteTarget && (
+          <DeleteFileSystemModal 
+             fsName={deleteTarget.name}
+             onClose={() => setDeleteTarget(null)}
+             onConfirm={handleDeleteConfirm}
+          />
+       )}
+
+       {instructionsTarget && (
+          <MountInstructionsModal 
+             fileSystem={instructionsTarget}
+             onClose={() => setInstructionsTarget(null)}
+          />
+       )}
     </div>
   );
 };

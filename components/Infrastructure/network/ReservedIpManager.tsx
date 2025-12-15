@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
-import { Lock, Plus, MoreVertical, MapPin, Server, ArrowRight, Trash2, RefreshCw, Save, ArrowLeft } from 'lucide-react';
+import { Lock, Plus, MoreVertical, MapPin, Server, ArrowRight, Trash2, RefreshCw, X, Link2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../Button';
 import { LOCATIONS, VPS_LIST } from '../../../constants';
+import { DeleteReservedIpModal } from './DeleteReservedIpModal';
+import { AttachIpModal } from './AttachIpModal';
 
 // Mock Data
 const RESERVED_IPS = [
@@ -15,6 +18,10 @@ export const ReservedIpManager: React.FC = () => {
   const [view, setView] = useState<'list' | 'create'>('list');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
+  // Modals
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [attachTarget, setAttachTarget] = useState<any>(null);
+
   // Create Form State
   const [createMode, setCreateMode] = useState<'new' | 'convert'>('new');
   const [newIpForm, setNewIpForm] = useState({
@@ -49,12 +56,28 @@ export const ReservedIpManager: React.FC = () => {
     
     setIps([...ips, newIp]);
     setView('list');
+    
+    // Reset forms
+    setNewIpForm({ location: 'us-e', type: 'IPv4', label: '' });
+    setConvertForm({ instanceId: '', ipAddress: '' });
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to release this Reserved IP?')) {
-      setIps(prev => prev.filter(ip => ip.id !== id));
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setIps(prev => prev.filter(ip => ip.id !== deleteTarget.id));
+      setDeleteTarget(null);
     }
+  };
+
+  const handleAttachConfirm = (instanceName: string) => {
+    if (attachTarget) {
+      setIps(prev => prev.map(ip => ip.id === attachTarget.id ? { ...ip, attachedTo: instanceName } : ip));
+      setAttachTarget(null);
+    }
+  };
+
+  const handleDetach = (id: string) => {
+    setIps(prev => prev.map(ip => ip.id === id ? { ...ip, attachedTo: null } : ip));
     setActiveDropdown(null);
   };
 
@@ -76,7 +99,7 @@ export const ReservedIpManager: React.FC = () => {
                   <div 
                     onClick={() => setCreateMode('new')}
                     className={`
-                      p-6 rounded-2xl border cursor-pointer transition-all 
+                      p-6 rounded-2xl border-2 cursor-pointer transition-all 
                       ${createMode === 'new' 
                         ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 ring-1 ring-blue-500 dark:ring-blue-500 dark:border-blue-500' 
                         : 'bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 hover:border-gray-300 dark:hover:border-neutral-600'}
@@ -88,7 +111,7 @@ export const ReservedIpManager: React.FC = () => {
                   <div 
                     onClick={() => setCreateMode('convert')}
                     className={`
-                      p-6 rounded-2xl border cursor-pointer transition-all 
+                      p-6 rounded-2xl border-2 cursor-pointer transition-all 
                       ${createMode === 'convert' 
                         ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 ring-1 ring-blue-500 dark:ring-blue-500 dark:border-blue-500' 
                         : 'bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 hover:border-gray-300 dark:hover:border-neutral-600'}
@@ -173,15 +196,12 @@ export const ReservedIpManager: React.FC = () => {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl text-sm text-blue-700 dark:text-blue-300">
                <ul className="list-disc pl-5 space-y-1">
                   <li>Reserved IPs cost <strong>$3.00/month</strong> ($0.004/hour).</li>
-                  <li>IPs can only be attached to a single resource at a time.</li>
-                  <li>Converting an IP preserves its address even if the instance is destroyed.</li>
+                  <li>IPs can only be remapped within the same datacenter region.</li>
                </ul>
             </div>
-
-            <div className="pt-4 flex justify-end">
-               <Button size="lg" className="shadow-lg shadow-plasma-500/20 px-8" onClick={handleCreate}>
-                  {createMode === 'new' ? 'Add Reserved IP' : 'Convert IP'}
-               </Button>
+            
+            <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-neutral-700">
+               <Button onClick={handleCreate} className="shadow-lg shadow-blue-500/20 px-8 py-3">Reserve IP Address</Button>
             </div>
          </div>
       </div>
@@ -192,101 +212,136 @@ export const ReservedIpManager: React.FC = () => {
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 relative" onClick={() => setActiveDropdown(null)}>
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reserved IPs</h1>
-             <p className="text-gray-500 dark:text-gray-400 text-sm">Static IP addresses for your cloud resources.</p>
+             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Lock className="text-plasma-600" size={32} />
+                Reserved IPs
+             </h1>
+             <p className="text-gray-500 dark:text-gray-400 text-sm">Static IP addresses that persist across instance terminations.</p>
           </div>
           <Button onClick={() => setView('create')}>
-             <Plus size={16} className="mr-2"/> Add Reserved IP
+             <Plus size={16} className="mr-2"/> Reserve New IP
           </Button>
        </div>
-       
+
        <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-3xl overflow-visible shadow-sm">
           <div className="p-6 border-b border-gray-100 dark:border-neutral-700 flex justify-between items-center">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                 <Lock size={20} className="text-plasma-600"/> Static Addresses
-              </h3>
-              <span className="text-xs bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 font-bold">{ips.length} IPs</span>
+             <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Lock size={20} className="text-plasma-600"/> Address Pool
+             </h3>
+             <span className="text-xs bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 font-bold">
+                {ips.length} IPs
+             </span>
           </div>
           <div className="overflow-x-auto overflow-y-visible">
-              <table className="w-full text-left text-sm min-w-[800px]">
-                  <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-neutral-700">
-                      <tr>
-                          <th className="px-6 py-4">Address</th>
-                          <th className="px-6 py-4">Type</th>
-                          <th className="px-6 py-4">Location</th>
-                          <th className="px-6 py-4">Attached Resource</th>
-                          <th className="px-6 py-4">Cost</th>
-                          <th className="px-6 py-4 text-right">Actions</th>
+             <table className="w-full text-left text-sm min-w-[800px]">
+                <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-neutral-700">
+                   <tr>
+                      <th className="px-6 py-4">IP Address</th>
+                      <th className="px-6 py-4">Region</th>
+                      <th className="px-6 py-4">Assignment</th>
+                      <th className="px-6 py-4">Cost</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
+                   {ips.map((ip, index) => (
+                      <tr key={ip.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative">
+                         <td className="px-6 py-4">
+                            <div className="font-mono font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                               {ip.address}
+                               <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ip.type === 'IPv6' ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 border-purple-200' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200'}`}>
+                                  {ip.type}
+                               </span>
+                            </div>
+                         </td>
+                         <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                               <MapPin size={14} className="text-gray-400"/> {ip.region}
+                            </div>
+                         </td>
+                         <td className="px-6 py-4">
+                            {ip.attachedTo ? (
+                               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium text-xs bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded w-fit">
+                                  <Server size={12} /> {ip.attachedTo}
+                               </div>
+                            ) : (
+                               <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded w-fit italic">
+                                  Unassigned
+                               </div>
+                            )}
+                         </td>
+                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            ${ip.cost.toFixed(2)}/mo
+                         </td>
+                         <td className="px-6 py-4 text-right relative">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); toggleDropdown(ip.id); }}
+                                className={`p-2 rounded-lg transition-colors ${activeDropdown === ip.id ? 'bg-gray-100 dark:bg-neutral-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-700 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                            >
+                                <MoreVertical size={18} className="rotate-90" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {activeDropdown === ip.id && (
+                                <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= ips.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                    {ip.attachedTo ? (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleDetach(ip.id); }}
+                                          className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <X size={14} /> Detach
+                                        </button>
+                                    ) : (
+                                        <button 
+                                          onClick={(e) => { 
+                                              e.stopPropagation(); 
+                                              setAttachTarget(ip); 
+                                              setActiveDropdown(null); 
+                                          }}
+                                          className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <Link2 size={14} /> Attach to Instance
+                                        </button>
+                                    )}
+                                    
+                                    <div className="h-px bg-gray-100 dark:bg-neutral-700 my-1"></div>
+                                    <button 
+                                      onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          setDeleteTarget(ip); 
+                                          setActiveDropdown(null); 
+                                      }}
+                                      className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                    >
+                                        <Trash2 size={14} /> Release IP
+                                    </button>
+                                </div>
+                            )}
+                         </td>
                       </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                      {ips.map((ip) => (
-                          <tr key={ip.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative">
-                              <td className="px-6 py-4">
-                                  <div className="font-mono font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                      {ip.address}
-                                      <button className="text-gray-400 hover:text-plasma-600" title="Copy IP"><span className="sr-only">Copy</span></button>
-                                  </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                  <span className={`text-xs font-bold px-2 py-1 rounded ${ip.type === 'IPv4' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'}`}>
-                                      {ip.type}
-                                  </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                                     <MapPin size={14} className="text-gray-400"/> {ip.region}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                  {ip.attachedTo ? (
-                                      <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
-                                          <Server size={14} className="text-gray-500"/> {ip.attachedTo}
-                                      </div>
-                                  ) : (
-                                      <span className="text-gray-400 italic text-xs">Unattached</span>
-                                  )}
-                              </td>
-                              <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                                  ${ip.cost.toFixed(2)}/mo
-                              </td>
-                              <td className="px-6 py-4 text-right relative">
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); toggleDropdown(ip.id); }}
-                                    className={`p-2 rounded-lg transition-colors ${activeDropdown === ip.id ? 'bg-gray-100 dark:bg-neutral-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-700 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                                  >
-                                      <MoreVertical size={18} className="rotate-90"/>
-                                  </button>
-                                  
-                                  {activeDropdown === ip.id && (
-                                      <div className="absolute right-8 top-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                          {ip.attachedTo ? (
-                                              <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                                                  <RefreshCw size={14} /> Detach
-                                              </button>
-                                          ) : (
-                                              <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                                                  <ArrowRight size={14} /> Attach
-                                              </button>
-                                          )}
-                                          <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                                              <RefreshCw size={14} /> Convert
-                                          </button>
-                                          <button 
-                                            onClick={() => handleDelete(ip.id)}
-                                            className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                                          >
-                                              <Trash2 size={14} /> Delete
-                                          </button>
-                                      </div>
-                                  )}
-                              </td>
-                          </tr>
-                      ))}
-                  </tbody>
-              </table>
+                   ))}
+                </tbody>
+             </table>
           </div>
        </div>
+
+       {/* Delete Modal */}
+       {deleteTarget && (
+          <DeleteReservedIpModal 
+             address={deleteTarget.address}
+             onClose={() => setDeleteTarget(null)}
+             onConfirm={handleDeleteConfirm}
+          />
+       )}
+
+       {/* Attach Modal */}
+       {attachTarget && (
+          <AttachIpModal 
+             ipAddress={attachTarget.address}
+             onClose={() => setAttachTarget(null)}
+             onAttach={handleAttachConfirm}
+          />
+       )}
     </div>
   );
 };

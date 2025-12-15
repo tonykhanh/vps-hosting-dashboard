@@ -7,9 +7,10 @@ import { LOCATIONS, REGIONS, IMAGES } from '../../../constants';
 
 interface CreateVolumeModalProps {
   onClose: () => void;
+  onCreate: (data: { name: string; size: number; type: string; region: string; cost: number }) => void;
 }
 
-export const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({ onClose }) => {
+export const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({ onClose, onCreate }) => {
   const [volumeType, setVolumeType] = useState<'hdd' | 'nvme'>('nvme');
   const [activeRegion, setActiveRegion] = useState('All Locations');
   const [locationSearch, setLocationSearch] = useState('');
@@ -32,7 +33,13 @@ export const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({ onClose })
   }, [activeRegion, locationSearch]);
 
   const handleCreate = () => {
-    // Logic to create volume would go here
+    onCreate({
+      name: label,
+      size: size,
+      type: volumeType === 'nvme' ? 'NVMe' : 'HDD',
+      region: selectedLocation,
+      cost: price
+    });
     onClose();
   };
 
@@ -133,13 +140,15 @@ export const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({ onClose })
                 
                 {/* Locations Grid */}
                 <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto custom-scrollbar">
-                   {filteredLocations.map(loc => (
+                   {filteredLocations.map(loc => {
+                      const isSelected = selectedLocation === loc.id;
+                      return (
                       <div 
                          key={loc.id}
                          onClick={() => setSelectedLocation(loc.id)}
                          className={`
                             p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3
-                            ${selectedLocation === loc.id 
+                            ${isSelected 
                                ? 'border-plasma-500 bg-plasma-50 dark:bg-plasma-500/20 ring-1 ring-plasma-500 dark:border-plasma-400' 
                                : 'border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-plasma-300 dark:hover:border-plasma-500/50'}
                          `}
@@ -147,11 +156,11 @@ export const CreateVolumeModal: React.FC<CreateVolumeModalProps> = ({ onClose })
                          <span className="text-2xl">{loc.flag}</span>
                          <div className="overflow-hidden">
                             <div className="font-bold text-sm text-gray-900 dark:text-white truncate">{loc.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{loc.region}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{loc.id.toUpperCase()}</div>
                          </div>
-                         {selectedLocation === loc.id && <CheckCircle2 size={16} className="ml-auto text-plasma-600 dark:text-plasma-400 flex-shrink-0" />}
+                         {isSelected && <div className="ml-auto text-plasma-600 dark:text-plasma-400"><Check size={16} /></div>}
                       </div>
-                   ))}
+                   )})}
                 </div>
              </div>
           </section>

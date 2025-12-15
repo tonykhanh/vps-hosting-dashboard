@@ -1,15 +1,21 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Shield, Plus, MoreVertical, Edit2, Trash2, X, Save } from 'lucide-react';
+import { Shield, Plus, MoreVertical, Edit2, Trash2, X } from 'lucide-react';
 import { Button } from '../../Button';
 import { FIREWALL_LIST } from '../../../constants';
+import { DeleteFirewallGroupModal } from './DeleteFirewallGroupModal';
+import { ManageFirewallRulesModal } from './ManageFirewallRulesModal';
 
 export const FirewallManager: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [groups, setGroups] = useState(FIREWALL_LIST);
   const [newGroup, setNewGroup] = useState({ name: '', type: 'Cloud Firewall' });
+
+  // Modal State
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [manageTarget, setManageTarget] = useState<any>(null);
 
   const toggleDropdown = (id: string) => {
     if (activeDropdown === id) {
@@ -32,9 +38,15 @@ export const FirewallManager: React.FC = () => {
     setNewGroup({ name: '', type: 'Cloud Firewall' });
   }
 
-  const handleDelete = (id: string) => {
-      setGroups(prev => prev.filter(g => g.id !== id));
-      setActiveDropdown(null);
+  const handleDeleteConfirm = () => {
+      if (deleteTarget) {
+        setGroups(prev => prev.filter(g => g.id !== deleteTarget.id));
+        setDeleteTarget(null);
+      }
+  }
+
+  const handleUpdateRules = (id: string, updates: any) => {
+      setGroups(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
   }
 
   return (
@@ -67,7 +79,7 @@ export const FirewallManager: React.FC = () => {
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                      {groups.map((fw) => (
+                      {groups.map((fw, index) => (
                           <tr key={fw.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors">
                               <td className="px-6 py-4">
                                   <div className="font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -98,16 +110,27 @@ export const FirewallManager: React.FC = () => {
                                     onClick={(e) => { e.stopPropagation(); toggleDropdown(fw.id); }}
                                     className={`p-2 rounded-lg transition-colors ${activeDropdown === fw.id ? 'bg-gray-100 dark:bg-neutral-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-700 hover:text-gray-600 dark:hover:text-gray-200'}`}
                                   >
-                                      <MoreVertical size={18} />
+                                      <MoreVertical size={18} className="rotate-90" />
                                   </button>
                                   
                                   {activeDropdown === fw.id && (
-                                      <div className="absolute right-8 top-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                          <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                      <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= groups.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                          <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setManageTarget(fw);
+                                                setActiveDropdown(null);
+                                            }}
+                                            className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                          >
                                               <Edit2 size={14} /> Manage Rules
                                           </button>
                                           <button 
-                                            onClick={() => handleDelete(fw.id)}
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                setDeleteTarget(fw);
+                                                setActiveDropdown(null);
+                                            }}
                                             className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                                           >
                                               <Trash2 size={14} /> Delete Group
@@ -160,6 +183,24 @@ export const FirewallManager: React.FC = () => {
            </div>
         </div>,
         document.body
+       )}
+
+       {/* Delete Modal */}
+       {deleteTarget && (
+          <DeleteFirewallGroupModal 
+             groupName={deleteTarget.name}
+             onClose={() => setDeleteTarget(null)}
+             onConfirm={handleDeleteConfirm}
+          />
+       )}
+
+       {/* Manage Rules Modal */}
+       {manageTarget && (
+          <ManageFirewallRulesModal 
+             group={manageTarget}
+             onClose={() => setManageTarget(null)}
+             onUpdate={handleUpdateRules}
+          />
        )}
     </div>
   );

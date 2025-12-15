@@ -3,21 +3,23 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Zap, Plus, MoreVertical, Play, Square, 
-  Activity, Clock, Box, X, Code, CheckCircle2 
+  Activity, Clock, Box, X, Code, CheckCircle2, Trash2, FileText, RefreshCw 
 } from 'lucide-react';
 import { Button } from '../../Button';
 import { Badge } from '../../Badge';
+import { FunctionLogsModal } from './FunctionLogsModal';
+import { DeleteFunctionModal } from './DeleteFunctionModal';
 
 // Mock Data
-const FUNCTIONS = [
+const INITIAL_FUNCTIONS = [
   { 
     id: 'fn-1', 
     name: 'resize-image-processor', 
     runtime: 'Node.js 18', 
-    region: 'New York',
+    region: 'New York', 
     memory: '128 MB',
     timeout: '10s',
-    invocations: '1.2M',
+    invocations: 1200000,
     errors: '0.01%',
     status: 'active',
     lastInvoked: '2m ago'
@@ -26,10 +28,10 @@ const FUNCTIONS = [
     id: 'fn-2', 
     name: 'order-webhook-handler', 
     runtime: 'Python 3.9', 
-    region: 'Singapore',
+    region: 'Singapore', 
     memory: '256 MB',
     timeout: '30s',
-    invocations: '450k',
+    invocations: 450000,
     errors: '0.00%',
     status: 'active',
     lastInvoked: 'Just now'
@@ -38,12 +40,12 @@ const FUNCTIONS = [
     id: 'fn-3', 
     name: 'daily-report-generator', 
     runtime: 'Go 1.x', 
-    region: 'Frankfurt',
+    region: 'Frankfurt', 
     memory: '512 MB',
     timeout: '60s',
-    invocations: '30',
+    invocations: 30,
     errors: '0.00%',
-    status: 'deploying',
+    status: 'active',
     lastInvoked: '1d ago'
   },
 ];
@@ -56,11 +58,82 @@ const RUNTIMES = [
 ];
 
 export const ServerlessManager: React.FC = () => {
+  const [functions, setFunctions] = useState(INITIAL_FUNCTIONS);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newFunction, setNewFunction] = useState({ name: '', runtime: 'node18', memory: 128 });
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [logsFunction, setLogsFunction] = useState<string | null>(null);
+  const [invokingId, setInvokingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const toggleDropdown = (id: string) => {
+    setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
+  const handleDeploy = () => {
+    setIsDeploying(true);
+    const runtimeName = RUNTIMES.find(r => r.id === newFunction.runtime)?.name || 'Node.js 18';
+    
+    // Simulate deployment delay
+    setTimeout(() => {
+        const newFn = {
+            id: `fn-${Date.now()}`,
+            name: newFunction.name,
+            runtime: runtimeName,
+            region: 'New York',
+            memory: `${newFunction.memory} MB`,
+            timeout: '10s',
+            invocations: 0,
+            errors: '0.00%',
+            status: 'deploying',
+            lastInvoked: '-'
+        };
+        
+        setFunctions([newFn, ...functions]);
+        setIsDeploying(false);
+        setShowCreateModal(false);
+        setNewFunction({ name: '', runtime: 'node18', memory: 128 });
+
+        // Simulate going active
+        setTimeout(() => {
+            setFunctions(prev => prev.map(f => f.id === newFn.id ? { ...f, status: 'active' } : f));
+        }, 3000);
+    }, 1500);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setFunctions(prev => prev.filter(f => f.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleInvoke = (id: string) => {
+      setInvokingId(id);
+      setTimeout(() => {
+          setFunctions(prev => prev.map(f => {
+              if (f.id === id) {
+                  return { 
+                      ...f, 
+                      invocations: f.invocations + 1,
+                      lastInvoked: 'Just now'
+                  };
+              }
+              return f;
+          }));
+          setInvokingId(null);
+      }, 800);
+  };
+
+  const formatInvocations = (num: number) => {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+      return num.toString();
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 pb-10">
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 pb-10" onClick={() => setActiveDropdown(null)}>
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -81,7 +154,9 @@ export const ServerlessManager: React.FC = () => {
              </div>
              <div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Total Invocations (24h)</div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">1.65M</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatInvocations(functions.reduce((acc, curr) => acc + curr.invocations, 0))}
+                </div>
              </div>
           </div>
           <div className="bg-white dark:bg-neutral-800 p-4 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-sm flex items-center gap-4">
@@ -99,13 +174,13 @@ export const ServerlessManager: React.FC = () => {
              </div>
              <div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Active Functions</div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{FUNCTIONS.length}</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{functions.length}</div>
              </div>
           </div>
        </div>
 
-       <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+       <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl overflow-visible shadow-sm">
+          <div className="overflow-x-auto overflow-y-visible">
              <table className="w-full text-left text-sm min-w-[800px]">
                 <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium">
                    <tr>
@@ -118,8 +193,8 @@ export const ServerlessManager: React.FC = () => {
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                   {FUNCTIONS.map(fn => (
-                      <tr key={fn.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors">
+                   {functions.map((fn, index) => (
+                      <tr key={fn.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative group">
                          <td className="px-6 py-4">
                             <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                <div className="p-1.5 bg-gray-100 dark:bg-neutral-700 rounded text-gray-500">
@@ -128,7 +203,7 @@ export const ServerlessManager: React.FC = () => {
                                {fn.name}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-8">
-                               {fn.invocations} inv • {fn.errors} err
+                               {formatInvocations(fn.invocations)} inv • {fn.errors} err • {fn.lastInvoked}
                             </div>
                          </td>
                          <td className="px-6 py-4">
@@ -151,27 +226,61 @@ export const ServerlessManager: React.FC = () => {
                                </span>
                             )}
                          </td>
-                         <td className="px-6 py-4 text-right">
+                         <td className="px-6 py-4 text-right relative">
                             <div className="flex justify-end gap-2">
-                               <button className="text-gray-400 hover:text-green-600 dark:hover:text-green-400 p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Test Function">
-                                  <Play size={16} />
+                               <button 
+                                  onClick={() => handleInvoke(fn.id)}
+                                  disabled={fn.status !== 'active' || invokingId === fn.id}
+                                  className={`p-2 rounded-lg transition-colors ${invokingId === fn.id ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'}`} 
+                                  title="Test Function"
+                               >
+                                  {invokingId === fn.id ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
                                 </button>
-                               <button className="text-gray-400 hover:text-gray-700 dark:hover:text-white p-2 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-                                  <MoreVertical size={16} />
+                               <button 
+                                  onClick={(e) => { e.stopPropagation(); toggleDropdown(fn.id); }}
+                                  className={`p-2 rounded-lg transition-colors ${activeDropdown === fn.id ? 'bg-gray-100 dark:bg-neutral-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
+                               >
+                                  <MoreVertical size={16} className="rotate-90" />
                                </button>
+
+                               {activeDropdown === fn.id && (
+                                  <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= functions.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                     <button 
+                                        onClick={() => { setLogsFunction(fn.name); setActiveDropdown(null); }}
+                                        className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                     >
+                                        <FileText size={14} /> View Logs
+                                     </button>
+                                     <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            setDeleteTarget(fn); 
+                                            setActiveDropdown(null); 
+                                        }}
+                                        className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                     >
+                                        <Trash2 size={14} /> Delete
+                                     </button>
+                                  </div>
+                               )}
                             </div>
                          </td>
                       </tr>
                    ))}
                 </tbody>
              </table>
+             {functions.length === 0 && (
+                <div className="p-8 text-center text-gray-400 text-sm">
+                   No functions deployed. Create one to get started.
+                </div>
+             )}
           </div>
        </div>
 
        {/* Create Modal */}
        {showCreateModal && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
-           <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setShowCreateModal(false)}>
+           <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
               <div className="p-6 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50 dark:bg-neutral-800">
                  <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <Zap size={20} className="text-amber-500"/> Deploy Serverless Function
@@ -234,13 +343,35 @@ export const ServerlessManager: React.FC = () => {
               
               <div className="p-6 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-2 bg-gray-50 dark:bg-neutral-900">
                  <Button variant="secondary" onClick={() => setShowCreateModal(false)} className="dark:bg-neutral-800 dark:text-white dark:border-neutral-700">Cancel</Button>
-                 <Button className="gap-2 bg-amber-500 hover:bg-amber-600 border-none text-white shadow-lg shadow-amber-500/20" onClick={() => setShowCreateModal(false)} disabled={!newFunction.name}>
-                    <Zap size={16}/> Deploy Function
+                 <Button 
+                    className="gap-2 bg-amber-500 hover:bg-amber-600 border-none text-white shadow-lg shadow-amber-500/20" 
+                    onClick={handleDeploy} 
+                    disabled={!newFunction.name || isDeploying}
+                    isLoading={isDeploying}
+                 >
+                    <Zap size={16}/> {isDeploying ? 'Deploying...' : 'Deploy Function'}
                  </Button>
               </div>
            </div>
         </div>,
         document.body
+      )}
+
+      {/* Logs Modal */}
+      {logsFunction && (
+         <FunctionLogsModal 
+            functionName={logsFunction}
+            onClose={() => setLogsFunction(null)}
+         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+         <DeleteFunctionModal 
+            functionName={deleteTarget.name}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleDeleteConfirm}
+         />
       )}
     </div>
   );

@@ -1,24 +1,55 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Key, Plus, Trash2, X, MoreVertical } from 'lucide-react';
+import { Key, Plus, Trash2, X, MoreVertical, Copy, Check } from 'lucide-react';
 import { Button } from '../../Button';
+import { DeleteSshKeyModal } from './DeleteSshKeyModal';
 
-const SSH_KEYS_LIST = [
+const INITIAL_SSH_KEYS = [
   { id: 'ssh-1', name: 'MacBook Pro - Personal', fingerprint: 'SHA256:ep9...41a', created: '2023-01-10' },
   { id: 'ssh-2', name: 'Dev Team Key', fingerprint: 'SHA256:a9b...x99', created: '2023-05-20' },
 ];
 
 export const SshKeyManager: React.FC = () => {
+  const [sshKeys, setSshKeys] = useState(INITIAL_SSH_KEYS);
   const [showAddSSHModal, setShowAddSSHModal] = useState(false);
   const [newSSHKey, setNewSSHKey] = useState({ name: '', key: '' });
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const toggleDropdown = (id: string) => {
-    if (activeDropdown === id) {
-      setActiveDropdown(null);
-    } else {
-      setActiveDropdown(id);
+    setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
+  const handleCopyFingerprint = (id: string, fingerprint: string) => {
+    navigator.clipboard.writeText(fingerprint);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleAddKey = () => {
+    if (!newSSHKey.name || !newSSHKey.key) return;
+
+    // Simulate fingerprint generation
+    const mockFingerprint = `SHA256:${Math.random().toString(36).substring(2, 10)}...${Math.random().toString(36).substring(2, 5)}`;
+
+    const newKey = {
+      id: `ssh-${Date.now()}`,
+      name: newSSHKey.name,
+      fingerprint: mockFingerprint,
+      created: new Date().toISOString().split('T')[0]
+    };
+
+    setSshKeys([newKey, ...sshKeys]);
+    setNewSSHKey({ name: '', key: '' });
+    setShowAddSSHModal(false);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setSshKeys(prev => prev.filter(k => k.id !== deleteTarget.id));
+      setDeleteTarget(null);
     }
   };
 
@@ -40,7 +71,7 @@ export const SshKeyManager: React.FC = () => {
                 <Key size={18} className="text-plasma-600"/> Authorized Keys
              </h3>
              <span className="text-xs bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 font-mono">
-                {SSH_KEYS_LIST.length} Keys
+                {sshKeys.length} Keys
              </span>
           </div>
           <div className="overflow-x-auto overflow-y-visible">
@@ -54,7 +85,7 @@ export const SshKeyManager: React.FC = () => {
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                   {SSH_KEYS_LIST.map(key => (
+                   {sshKeys.map((key, index) => (
                       <tr key={key.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative group">
                          <td className="px-6 py-4 font-bold text-gray-900 dark:text-white flex items-center gap-3">
                             <div className="p-2 bg-gray-100 dark:bg-neutral-700 rounded-lg text-gray-500">
@@ -63,9 +94,19 @@ export const SshKeyManager: React.FC = () => {
                             {key.name}
                          </td>
                          <td className="px-6 py-4">
-                            <code className="bg-gray-100 dark:bg-neutral-900 px-2 py-1 rounded text-xs font-mono text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-neutral-700">
-                               {key.fingerprint}
-                            </code>
+                            <div 
+                                className="group/copy inline-flex items-center gap-2 bg-gray-100 dark:bg-neutral-900 px-2 py-1 rounded border border-gray-200 dark:border-neutral-700 cursor-pointer hover:border-gray-300 dark:hover:border-neutral-600 transition-colors"
+                                onClick={() => handleCopyFingerprint(key.id, key.fingerprint)}
+                            >
+                                <code className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                                {key.fingerprint}
+                                </code>
+                                {copiedId === key.id ? (
+                                    <Check size={12} className="text-green-500" />
+                                ) : (
+                                    <Copy size={12} className="text-gray-400 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                                )}
+                            </div>
                          </td>
                          <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{key.created}</td>
                          <td className="px-6 py-4 text-right relative">
@@ -78,8 +119,15 @@ export const SshKeyManager: React.FC = () => {
 
                             {/* Dropdown Menu */}
                             {activeDropdown === key.id && (
-                                <div className="absolute right-8 top-8 w-32 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                    <button className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                <div className={`absolute right-8 w-32 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= sshKeys.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteTarget(key);
+                                            setActiveDropdown(null);
+                                        }}
+                                        className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                    >
                                         <Trash2 size={14} /> Remove
                                     </button>
                                 </div>
@@ -89,6 +137,11 @@ export const SshKeyManager: React.FC = () => {
                    ))}
                 </tbody>
              </table>
+             {sshKeys.length === 0 && (
+                <div className="p-8 text-center text-gray-400 text-sm">
+                   No SSH keys found. Add one to enable secure access to your instances.
+                </div>
+             )}
           </div>
        </div>
 
@@ -131,13 +184,22 @@ export const SshKeyManager: React.FC = () => {
 
               <div className="p-6 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-2 bg-gray-50 dark:bg-neutral-900">
                  <Button variant="secondary" onClick={() => setShowAddSSHModal(false)} className="dark:bg-neutral-800 dark:text-white dark:border-neutral-700">Cancel</Button>
-                 <Button className="gap-2 shadow-lg shadow-plasma-500/20" onClick={() => setShowAddSSHModal(false)} disabled={!newSSHKey.name || !newSSHKey.key}>
+                 <Button className="gap-2 shadow-lg shadow-plasma-500/20" onClick={handleAddKey} disabled={!newSSHKey.name || !newSSHKey.key}>
                     Add Key
                  </Button>
               </div>
            </div>
         </div>,
         document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+         <DeleteSshKeyModal 
+            keyName={deleteTarget.name}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleDeleteConfirm}
+         />
       )}
     </div>
   );

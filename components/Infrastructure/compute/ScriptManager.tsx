@@ -3,22 +3,68 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FileCode, Plus, Trash2, FileText, X, Copy, Terminal, MoreVertical, Edit2 } from 'lucide-react';
 import { Button } from '../../Button';
+import { DeleteScriptModal } from './DeleteScriptModal';
+import { ViewScriptModal } from './ViewScriptModal';
+import { EditScriptModal } from './EditScriptModal';
 
 const STARTUP_SCRIPTS_LIST = [
-  { id: 'scr-1', name: 'Docker & Compose Install', type: 'Boot', created: '2023-02-15' },
-  { id: 'scr-2', name: 'Update System & Security', type: 'Boot', created: '2023-03-10' },
+  { 
+    id: 'scr-1', 
+    name: 'Docker & Compose Install', 
+    type: 'Boot', 
+    created: '2023-02-15',
+    content: '#!/bin/bash\n\n# Update package index\napt-get update\n\n# Install Docker\napt-get install -y docker.io docker-compose\n\n# Enable Docker service\nsystemctl enable docker\nsystemctl start docker'
+  },
+  { 
+    id: 'scr-2', 
+    name: 'Update System & Security', 
+    type: 'Boot', 
+    created: '2023-03-10',
+    content: '#!/bin/bash\n\n# Update system packages\napt-get update && apt-get upgrade -y\n\n# Install Fail2Ban\napt-get install -y fail2ban\ncp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local\nsystemctl enable fail2ban\nsystemctl start fail2ban'
+  },
 ];
 
 export const ScriptManager: React.FC = () => {
+  const [scripts, setScripts] = useState(STARTUP_SCRIPTS_LIST);
   const [showAddScriptModal, setShowAddScriptModal] = useState(false);
   const [newScript, setNewScript] = useState({ name: '', type: 'boot', content: '#!/bin/bash\n\n# Your script goes here\n' });
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  
+  // Modals State
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [viewTarget, setViewTarget] = useState<typeof STARTUP_SCRIPTS_LIST[0] | null>(null);
+  const [editTarget, setEditTarget] = useState<typeof STARTUP_SCRIPTS_LIST[0] | null>(null);
 
   const toggleDropdown = (id: string) => {
     if (activeDropdown === id) {
       setActiveDropdown(null);
     } else {
       setActiveDropdown(id);
+    }
+  };
+
+  const handleAddScript = () => {
+    if (!newScript.name) return;
+    const script = {
+        id: `scr-${Date.now()}`,
+        name: newScript.name,
+        type: newScript.type === 'boot' ? 'Boot' : 'PXE',
+        created: new Date().toISOString().split('T')[0],
+        content: newScript.content
+    };
+    setScripts([script, ...scripts]);
+    setShowAddScriptModal(false);
+    setNewScript({ name: '', type: 'boot', content: '#!/bin/bash\n\n# Your script goes here\n' });
+  };
+
+  const handleUpdateScript = (id: string, updates: { name: string; content: string }) => {
+    setScripts(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) {
+      setScripts(prev => prev.filter(s => s.id !== deleteTarget.id));
+      setDeleteTarget(null);
     }
   };
 
@@ -51,7 +97,7 @@ export const ScriptManager: React.FC = () => {
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                   {STARTUP_SCRIPTS_LIST.map(script => (
+                   {scripts.map((script, index) => (
                       <tr key={script.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors relative group">
                          <td className="px-6 py-4 font-bold text-gray-900 dark:text-white flex items-center gap-3">
                             <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
@@ -75,14 +121,23 @@ export const ScriptManager: React.FC = () => {
 
                             {/* Dropdown Menu */}
                             {activeDropdown === script.id && (
-                                <div className="absolute right-8 top-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100">
-                                    <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                <div className={`absolute right-8 w-40 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100 ${index >= scripts.length - 1 ? 'bottom-full mb-2 origin-bottom-right' : 'top-8 origin-top-right'}`}>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setViewTarget(script); setActiveDropdown(null); }}
+                                      className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                    >
                                         <FileText size={14} /> View
                                     </button>
-                                    <button className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setEditTarget(script); setActiveDropdown(null); }}
+                                      className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2"
+                                    >
                                         <Edit2 size={14} /> Edit
                                     </button>
-                                    <button className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(script); setActiveDropdown(null); }}
+                                      className="px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                    >
                                         <Trash2 size={14} /> Delete
                                     </button>
                                 </div>
@@ -92,6 +147,11 @@ export const ScriptManager: React.FC = () => {
                    ))}
                 </tbody>
              </table>
+             {scripts.length === 0 && (
+                <div className="p-12 text-center text-gray-400 dark:text-gray-500">
+                   No scripts found. Create one to get started.
+                </div>
+             )}
           </div>
        </div>
 
@@ -163,13 +223,39 @@ export const ScriptManager: React.FC = () => {
               
               <div className="p-6 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-2 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10">
                  <Button variant="secondary" onClick={() => setShowAddScriptModal(false)} className="dark:bg-neutral-800 dark:text-white dark:border-neutral-700">Cancel</Button>
-                 <Button className="gap-2 shadow-lg shadow-plasma-500/20" onClick={() => setShowAddScriptModal(false)} disabled={!newScript.name}>
+                 <Button className="gap-2 shadow-lg shadow-plasma-500/20" onClick={handleAddScript} disabled={!newScript.name}>
                     Save Script
                  </Button>
               </div>
            </div>
         </div>,
         document.body
+      )}
+
+      {/* View Script Modal */}
+      {viewTarget && (
+         <ViewScriptModal 
+            script={viewTarget}
+            onClose={() => setViewTarget(null)}
+         />
+      )}
+
+      {/* Edit Script Modal */}
+      {editTarget && (
+         <EditScriptModal 
+            script={editTarget}
+            onClose={() => setEditTarget(null)}
+            onSave={handleUpdateScript}
+         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+         <DeleteScriptModal 
+            scriptName={deleteTarget.name}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleDeleteConfirm}
+         />
       )}
     </div>
   );
