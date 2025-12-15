@@ -84,7 +84,7 @@ export const Projects: React.FC = () => {
                      Manage your infrastructure capsules and blueprints.
                   </p>
                </div>
-               <Button onClick={() => navigate('/console/create')} className="shadow-lg shadow-plasma-500/20">
+               <Button onClick={() => navigate('/console/create')} className="shadow-lg shadow-plasma-500/20 w-full md:w-auto justify-center">
                   <Plus size={18} className="mr-2" /> New Capsule
                </Button>
             </div>
@@ -98,7 +98,7 @@ export const Projects: React.FC = () => {
             />
 
             {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                {filteredProjects.map((project) => (
                   <ProjectCard
                      key={project.id}

@@ -393,7 +393,7 @@ export const Team: React.FC = () => {
 
         {/* AI Dispatcher Panel */}
         {aiSuggestions.length > 0 && (
-          <div className="bg-gradient-to-r from-indigo-50 to-white dark:from-neutral-800 dark:to-neutral-900 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl p-6 shadow-sm flex items-center justify-between animate-in slide-in-from-top-4">
+          <div className="bg-gradient-to-r from-indigo-50 to-white dark:from-neutral-800 dark:to-neutral-900 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between animate-in slide-in-from-top-4 gap-4 sm:gap-0">
              <div className="flex items-center gap-4">
                 <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl">
                    <Sparkles size={24} />
@@ -403,20 +403,20 @@ export const Team: React.FC = () => {
                    <p className="text-indigo-700 dark:text-indigo-300 text-sm">{aiSuggestions[0].msg}</p>
                 </div>
              </div>
-             <div className="flex gap-2">
-                <Button size="sm" variant="secondary" className="dark:bg-neutral-700 dark:text-gray-300" onClick={() => setAiSuggestions(prev => prev.slice(1))}>Dismiss</Button>
-                <Button size="sm" onClick={() => handleAssignSuggestion(aiSuggestions[0].id)}>
-                   Approve Assignment <ArrowRight size={16} className="ml-2" />
+             <div className="flex gap-2 w-full sm:w-auto">
+                <Button size="sm" variant="secondary" className="dark:bg-neutral-700 dark:text-gray-300 flex-1 sm:flex-none" onClick={() => setAiSuggestions(prev => prev.slice(1))}>Dismiss</Button>
+                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => handleAssignSuggestion(aiSuggestions[0].id)}>
+                   Approve <ArrowRight size={16} className="ml-2" />
                 </Button>
              </div>
           </div>
         )}
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-auto lg:h-[calc(100vh-250px)]">
+        {/* Main Grid - Reordered for Mobile Responsiveness */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 h-auto lg:h-[calc(100vh-250px)]">
           
-          {/* Left Column: Team Roster */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* Left Column: Team Roster (Order 2 on Mobile) */}
+          <div className="lg:col-span-3 space-y-6 order-2 lg:order-1">
              <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-3xl p-6 shadow-glass h-full">
                 <div className="flex justify-between items-center mb-6">
                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Members ({members.length})</h3>
@@ -431,9 +431,9 @@ export const Team: React.FC = () => {
              </div>
           </div>
 
-          {/* Center Column: Kanban Board */}
-          <div className="lg:col-span-6 flex flex-col h-full overflow-hidden">
-             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto pb-4 custom-scrollbar">
+          {/* Center Column: Kanban Board (Order 1 on Mobile - Highest Priority) */}
+          <div className="lg:col-span-6 flex flex-col h-full overflow-hidden order-1 lg:order-2">
+             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 overflow-y-auto pb-4 custom-scrollbar">
                 {(['todo', 'in_progress', 'done'] as const).map(status => {
                    const filteredTasks = tasks.filter(t => t.status === status);
                    return (
@@ -474,14 +474,14 @@ export const Team: React.FC = () => {
              </div>
           </div>
 
-          {/* Right Column: Activity Feed */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* Right Column: Activity Feed (Order 3 on Mobile) */}
+          <div className="lg:col-span-3 space-y-6 order-3">
              <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-3xl p-6 shadow-glass h-full flex flex-col">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-6 flex items-center gap-2">
                    <Briefcase size={16} /> Activity Stream
                 </h3>
                 
-                <div className="space-y-6 relative flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-6 relative flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[300px] lg:min-h-0">
                    <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-neutral-700"></div>
                    
                    {activities.map(act => (
@@ -561,10 +561,10 @@ export const Team: React.FC = () => {
       {showAddTaskModal && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
            <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowAddTaskModal(false)} />
-           <div className="relative bg-white dark:bg-neutral-900 w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 z-10 flex flex-col">
+           <div className="relative bg-white dark:bg-neutral-900 w-full max-w-4xl rounded-[2rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 z-10 flex flex-col max-h-[90vh]">
               
               {/* Header */}
-              <div className="p-8 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+              <div className="p-8 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5 shrink-0">
                  <h3 className="font-bold text-2xl text-gray-900 dark:text-white flex items-center gap-3">
                     <div className="p-3 bg-plasma-100 dark:bg-plasma-900/30 rounded-2xl text-plasma-600 dark:text-plasma-400">
                         <CheckCircle2 size={24} />
@@ -574,7 +574,7 @@ export const Team: React.FC = () => {
                  <button onClick={() => setShowAddTaskModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"><X size={24}/></button>
               </div>
               
-              <div className="p-8 space-y-8">
+              <div className="p-8 space-y-8 overflow-y-auto">
                  {/* Title Input - Large */}
                  <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Task Description</label>
@@ -616,7 +616,7 @@ export const Team: React.FC = () => {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Priority - Buttons */}
                     <div>
                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -682,7 +682,7 @@ export const Team: React.FC = () => {
                  </div>
               </div>
 
-              <div className="p-8 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-4 bg-gray-50/50 dark:bg-white/5">
+              <div className="p-8 border-t border-gray-100 dark:border-neutral-800 flex justify-end gap-4 bg-gray-50/50 dark:bg-white/5 shrink-0">
                  <Button variant="secondary" onClick={() => setShowAddTaskModal(false)} className="dark:bg-neutral-800 dark:text-white dark:border-neutral-700 px-6 py-3 text-sm">Cancel</Button>
                  <Button onClick={handleAddTask} disabled={!newTaskForm.title} className="shadow-lg shadow-plasma-500/20 px-10 py-3 text-sm">Create Task</Button>
               </div>

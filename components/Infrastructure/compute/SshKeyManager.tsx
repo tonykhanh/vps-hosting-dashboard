@@ -68,9 +68,9 @@ export const SshKeyManager: React.FC = () => {
        <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl overflow-visible shadow-sm">
           <div className="p-6 border-b border-gray-100 dark:border-neutral-700 flex items-center justify-between">
              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Key size={18} className="text-plasma-600"/> Authorized Keys
+                <Key size={20} className="text-plasma-600"/> Authorized Keys
              </h3>
-             <span className="text-xs bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 font-mono">
+             <span className="text-xs bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 font-medium">
                 {sshKeys.length} Keys
              </span>
           </div>

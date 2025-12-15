@@ -43,18 +43,18 @@ export const ActiveCapsuleGrid: React.FC<ActiveCapsuleGridProps> = ({ projects, 
     <>
       <div className={`relative z-10 w-full transition-all duration-1000 delay-100 ease-out ${!isVisible ? 'opacity-0 translate-y-20 pointer-events-none blur-sm' : 'opacity-100'}`}>
           
-        <div className="flex items-center justify-between mb-8 max-w-[1800px] mx-auto px-6">
+        <div className="flex items-center justify-between mb-8 max-w-[1800px] mx-auto px-4 md:px-6">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
               <Box size={14}/> Active Capsules
           </h2>
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent flex-1 mx-8 opacity-50 dark:opacity-30"></div>
-          <span className="text-xs text-gray-500 font-mono tracking-widest">
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent flex-1 mx-4 md:mx-8 opacity-50 dark:opacity-30"></div>
+          <span className="text-xs text-gray-500 font-mono tracking-widest hidden sm:inline">
               SYSTEM_HEALTH <span className="text-emerald-500">98%</span>
           </span>
         </div>
         
-        {/* Expanded Grid Layout - Up to 4 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-[1800px] mx-auto pb-32 px-6">
+        {/* Expanded Grid Layout - Responsive breakpoints */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8 max-w-[1800px] mx-auto pb-32 px-4 md:px-6">
           {projects.map((project) => (
             <ProjectCard 
               key={project.id} 

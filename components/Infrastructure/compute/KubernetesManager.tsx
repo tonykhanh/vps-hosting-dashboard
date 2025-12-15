@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Layers, Plus, Loader2, CheckCircle2, MoreVertical, ArrowRight,
-  ChevronRight, Minus, Check, Info, Trash2, Settings, Scaling
+  ChevronRight, Minus, Check, Info, Trash2, Settings, Scaling, LayoutGrid
 } from 'lucide-react';
 import { Button } from '../../Button';
 import { 
@@ -138,9 +138,17 @@ export const KubernetesManager: React.FC = () => {
              </div>
 
              <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl overflow-visible shadow-sm">
+                <div className="p-6 border-b border-gray-100 dark:border-neutral-700 flex justify-between items-center">
+                   <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <LayoutGrid size={20} className="text-plasma-600"/> Clusters
+                   </h3>
+                   <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-neutral-700 rounded text-gray-600 dark:text-gray-300">
+                      {clusters.length} Active
+                   </span>
+                </div>
                 <div className="overflow-x-auto overflow-y-visible">
                    <table className="w-full text-left text-sm min-w-[800px]">
-                      <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-neutral-700">
+                      <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium">
                          <tr>
                             <th className="px-6 py-4">Name</th>
                             <th className="px-6 py-4">Location</th>

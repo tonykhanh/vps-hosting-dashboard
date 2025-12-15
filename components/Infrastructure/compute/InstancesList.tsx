@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { 
-  Server, Play, StopCircle, MoreVertical, Terminal, RefreshCw, Power, Trash2, ChevronLeft, ChevronRight, Disc, CheckCircle2, Zap 
+  Server, Play, StopCircle, MoreVertical, Terminal, RefreshCw, Power, Trash2, ChevronLeft, ChevronRight, Disc, CheckCircle2, Zap, Layers 
 } from 'lucide-react';
 import { Button } from '../../Button';
 import { Badge } from '../../Badge';
@@ -141,9 +141,17 @@ export const InstancesList: React.FC<InstancesListProps> = ({ activeTab, instanc
 
        {activeTab === 'overview' && (
           <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl overflow-visible shadow-sm">
+             <div className="p-6 border-b border-gray-100 dark:border-neutral-700 flex justify-between items-center">
+                <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                   <Layers size={20} className="text-plasma-600"/> Active Instances
+                </h3>
+                <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-neutral-700 rounded text-gray-600 dark:text-gray-300">
+                   {instances.length} / 10 Limit
+                </span>
+             </div>
              <div className="overflow-x-auto overflow-y-visible">
                 <table className="w-full text-left text-sm min-w-[800px]">
-                   <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-neutral-700">
+                   <thead className="bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 font-medium">
                       <tr>
                          <th className="px-6 py-4 w-12">
                             <input 
@@ -258,7 +266,7 @@ export const InstancesList: React.FC<InstancesListProps> = ({ activeTab, instanc
                 </table>
              </div>
              {instances.length > 0 && (
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-neutral-700 flex items-center justify-between bg-gray-50 dark:bg-neutral-900/50">
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-neutral-700 flex items-center justify-between bg-gray-50 dark:bg-neutral-900/50">
                     <div className="flex gap-2">
                     <button className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded text-gray-500 disabled:opacity-50"><ChevronLeft size={16}/></button>
                     <button className="w-8 h-8 flex items-center justify-center bg-white dark:bg-neutral-800 border border-plasma-500 text-plasma-600 dark:text-plasma-400 font-bold rounded">1</button>

@@ -88,9 +88,9 @@ const Layout = () => {
       <main 
         className={`
           flex-1 px-4 md:p-8 overflow-y-auto min-h-screen relative z-10 
-          transition-[margin] duration-700 ease-out-expo
+          transition-[margin] duration-500 ease-out-expo
           pt-20
-          ${isSidebarExpanded ? 'md:ml-72' : 'md:ml-0'}
+          ${isSidebarExpanded ? 'md:ml-80' : 'md:ml-28'}
           md:pt-8
         `}
       >
