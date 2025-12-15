@@ -154,16 +154,16 @@ export const REGIONS = ['Americas', 'Europe', 'Asia', 'Oceania'];
 export const IMAGES = {
   os: [
     { id: 'alma', name: 'AlmaLinux', versions: ['9 x64', '8 x64'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/linux/linux-original.svg' },
-    { id: 'alpine', name: 'Alpine Linux', versions: ['Latest x64', '3.18 x64'], icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e6/Alpine_Linux_logo.svg' },
+    { id: 'alpine', name: 'Alpine Linux', versions: ['Latest x64', '3.18 x64'], icon: 'https://avatars.githubusercontent.com/u/7623954?s=200&v=4' },
     { id: 'arch', name: 'Arch Linux', versions: ['Latest x64'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/archlinux/archlinux-original.svg' },
     { id: 'centos', name: 'CentOS', versions: ['Stream 9', '7'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/centos/centos-original.svg' },
     { id: 'debian', name: 'Debian', versions: ['12 (Bookworm)', '11 (Bullseye)'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/debian/debian-original.svg' },
     { id: 'fedora', name: 'Fedora', versions: ['39', '38'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fedora/fedora-original.svg' },
-    { id: 'rocky', name: 'Rocky Linux', versions: ['9', '8'], icon: 'https://upload.wikimedia.org/wikipedia/commons/6/66/Rocky_Linux_logo.svg' },
+    { id: 'rocky', name: 'Rocky Linux', versions: ['9', '8'], icon: 'https://cdn2.fptshop.com.vn/unsafe/Uploads/images/tin-tuc/178817/Originals/Rocky-Linux.jpg' },
     { id: 'ubuntu', name: 'Ubuntu', versions: ['24.04 LTS', '22.04 LTS', '20.04 LTS'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ubuntu/ubuntu-plain.svg' },
     { id: 'windows', name: 'Windows', versions: ['2022 Standard', '2019 Standard'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/windows8/windows8-original.svg', extraCost: 14 },
-    { id: 'freebsd', name: 'FreeBSD', versions: ['14', '13'], icon: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Freebsd_logo.svg' },
-    { id: 'openbsd', name: 'OpenBSD', versions: ['7.4', '7.3'], icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/OpenBSD_Logo.svg' },
+    { id: 'freebsd', name: 'FreeBSD', versions: ['14', '13'], icon: 'https://www.ateamsystems.com/wp-content/uploads/2016/11/freebsd-logo.png' },
+    { id: 'openbsd', name: 'OpenBSD', versions: ['7.4', '7.3'], icon: 'https://comptoir-du-libre.org/img/files/Softwares/116/photo/avatar/openbsd.jpg' },
   ],
   apps: [
     { id: 'docker', name: 'Docker', versions: ['Latest on Ubuntu 22.04'], icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg' },
