@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onToggle, isMobile
       {/* Mobile Backdrop */}
       <div 
         className={`
-          fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden
+          fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden
           ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
         onClick={onMobileClose}
@@ -106,17 +106,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onToggle, isMobile
         className={`
           fixed z-50 flex flex-col
           bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl 
-          border-r md:border border-white/20 dark:border-white/10 shadow-2xl
+          border-r lg:border border-white/20 dark:border-white/10 shadow-2xl
           
-          /* Mobile Styles */
+          /* Mobile Styles (Drawer) */
           inset-y-0 left-0 w-72 transition-transform duration-300 ease-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           
-          /* Desktop Styles */
-          md:translate-x-0
-          md:left-4 md:top-4 md:bottom-4 md:rounded-[2.5rem]
-          md:transition-[width] md:duration-500 md:cubic-bezier(0.25, 1, 0.5, 1)
-          ${isExpanded ? 'md:w-72' : 'md:w-20'}
+          /* Desktop Styles (Floating) */
+          lg:translate-x-0
+          lg:left-4 lg:top-4 lg:bottom-4 lg:rounded-[2.5rem]
+          lg:transition-[width] lg:duration-500 lg:cubic-bezier(0.25, 1, 0.5, 1)
+          ${isExpanded ? 'lg:w-72' : 'lg:w-20'}
         `}
       >
         {/* 1. Header / Brand */}
@@ -138,7 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onToggle, isMobile
           {/* Mobile Close Button */}
           <button 
             onClick={onMobileClose}
-            className="md:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full"
+            className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full"
           >
             <X size={20} />
           </button>
@@ -218,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onToggle, isMobile
 
                         {/* Tooltip for Collapsed State (Desktop Only) */}
                         {!showExpanded && (
-                          <div className="absolute left-14 bg-neutral-900 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-[60] shadow-xl translate-x-2 group-hover:translate-x-0 hidden md:block">
+                          <div className="absolute left-14 bg-neutral-900 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-[60] shadow-xl translate-x-2 group-hover:translate-x-0 hidden lg:block">
                             {item.name}
                           </div>
                         )}
@@ -237,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isExpanded, onToggle, isMobile
           <button 
             onClick={onToggle}
             className={`
-              hidden md:flex
+              hidden lg:flex
               absolute -right-5 top-1/2 -translate-y-1/2 z-50
               w-10 h-10 rounded-full bg-white dark:bg-neutral-800 
               border-4 border-slate-50 dark:border-neutral-950 shadow-xl

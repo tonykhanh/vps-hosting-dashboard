@@ -53,8 +53,8 @@ const Layout = () => {
   return (
     <div className="min-h-screen flex font-sans text-neutral-graphite dark:text-gray-200 relative overflow-hidden transition-colors duration-1000 ease-out">
       
-      {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-white/5 z-40 md:hidden px-4 flex items-center justify-between">
+      {/* Mobile Header (Visible on Tablet and Mobile) */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-white/5 z-40 lg:hidden px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
@@ -89,9 +89,8 @@ const Layout = () => {
         className={`
           flex-1 px-4 md:p-8 overflow-y-auto min-h-screen relative z-10 
           transition-[margin] duration-500 ease-out-expo
-          pt-20
-          ${isSidebarExpanded ? 'md:ml-80' : 'md:ml-28'}
-          md:pt-8
+          pt-20 lg:pt-8
+          ${isSidebarExpanded ? 'lg:ml-80' : 'lg:ml-28'}
         `}
       >
         <div 
