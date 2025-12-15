@@ -7,7 +7,7 @@ import {
   Zap, Bell, Database, Server, ArrowRight,
   Loader2, Trash2, Save, Sparkles, FileText,
   Activity, XCircle, Settings, Shield, BarChart3,
-  GripVertical, X, Edit3
+  GripVertical, X, Edit3, ArrowDown
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -63,37 +63,22 @@ export const Automation: React.FC = () => {
       successRate: 98,
       avgDuration: '45s',
       steps: [
-        { id: 's-1', type: 'trigger', label: 'Git Push (Main)', icon: GitMerge, config: 'Branch: main' },
-        { id: 's-2', type: 'action', label: 'Run Tests', icon:  CheckCircle2, config: 'npm test' },
-        { id: 's-3', type: 'action', label: 'Deploy to Prod', icon: Server, config: 'Target: VPS-1' },
-        { id: 's-4', type: 'notification', label: 'Slack Alert', icon: Bell, config: '#deployments' },
+        { id: 's-1', type: 'trigger', label: 'Webhook', icon: GitMerge, config: 'POST: /hooks/git-push' },
+        { id: 's-2', type: 'action', label: 'Deploy', icon: RefreshCw, config: 'Target: Production' },
+        { id: 's-3', type: 'notification', label: 'Notify', icon: Bell, config: 'Slack: #deploys' },
       ]
     },
     {
       id: 'wf-2',
-      name: 'Daily DB Backup & Prune',
+      name: 'Daily DB Backup',
       status: 'active',
       lastRun: '10 hours ago',
       successRate: 100,
       avgDuration: '2m 10s',
       steps: [
-        { id: 's-1', type: 'trigger', label: 'Schedule', icon: Clock, config: 'Every 24h @ 00:00' },
-        { id: 's-2', type: 'action', label: 'Dump Database', icon: Database, config: 'pg_dump' },
-        { id: 's-3', type: 'action', label: 'Upload to S3', icon:  Server, config: 'Bucket: backup-prod' },
-        { id: 's-4', type: 'action', label: 'Prune Old', icon: Trash2, config: 'Older than 7d' },
-      ]
-    },
-    {
-      id: 'wf-3',
-      name: 'Incident Response',
-      status: 'active',
-      lastRun: '1 day ago',
-      successRate: 92,
-      avgDuration: '15s',
-      steps: [
-        { id: 's-1', type: 'trigger', label: 'Alert Trigger', icon: AlertCircle, config: 'Severity: Critical' },
-        { id: 's-2', type: 'action', label: 'Scale Up', icon: Server, config: '+2 Nodes' },
-        { id: 's-3', type: 'notification', label: 'Page On-Call', icon:  Bell, config: 'PagerDuty' },
+        { id: 's-1', type: 'trigger', label: 'Schedule', icon: Clock, config: 'Daily at 00:00' },
+        { id: 's-2', type: 'action', label: 'Action', icon: Database, config: 'Snapshot DB' },
+        { id: 's-3', type: 'notification', label: 'Notify', icon:  Bell, config: 'Email: admin@company.com' },
       ]
     }
   ]);
@@ -110,7 +95,12 @@ export const Automation: React.FC = () => {
   
   // Configuration State
   const [configuringStep, setConfiguringStep] = useState<WorkflowStep | null>(null);
-  const [tempConfigValue, setTempConfigValue] = useState('');
+  
+  // Flexible state for form fields
+  const [configForm, setConfigForm] = useState<Record<string, string>>({});
+
+  // Drag Reordering State
+  const [draggedStepIndex, setDraggedStepIndex] = useState<number | null>(null);
 
   // Simulation Logic
   const handleRunWorkflow = (id: string) => {
@@ -167,7 +157,7 @@ export const Automation: React.FC = () => {
       type,
       label,
       icon,
-      config: 'Click to configure...'
+      config: 'Click to configure'
     };
     setBuilderSteps([...builderSteps, newStep]);
   };
@@ -193,48 +183,302 @@ export const Automation: React.FC = () => {
 
   const handleStepClick = (step: WorkflowStep) => {
     setConfiguringStep(step);
-    setTempConfigValue(step.config === 'Click to configure...' ? '' : step.config);
+    // Parse existing config if possible, or reset
+    // For simplicity, we just clear it or try to set defaults based on label
+    setConfigForm({}); 
   };
 
   const saveStepConfig = () => {
     if (configuringStep) {
+      let finalConfig = '';
+      
+      // Construct config string based on label
+      switch(configuringStep.label) {
+        case 'Webhook':
+          finalConfig = `${configForm.method || 'POST'}: ${configForm.url || '/'}`;
+          break;
+        case 'Schedule':
+          finalConfig = `${configForm.frequency || 'Daily'} at ${configForm.time || '00:00'}`;
+          break;
+        case 'Alert':
+          finalConfig = `${configForm.metric || 'CPU'} ${configForm.operator || '>'} ${configForm.threshold || '80%'}`;
+          break;
+        case 'Deploy':
+          finalConfig = `Target: ${configForm.target || 'Production'}`;
+          break;
+        case 'Scale':
+          finalConfig = `Range: ${configForm.min || '1'} - ${configForm.max || '3'} nodes`;
+          break;
+        case 'Notify':
+          finalConfig = `${configForm.channel || 'Email'}: ${configForm.destination || ''}`;
+          break;
+        default:
+          finalConfig = configForm.value || 'Configured';
+      }
+
       setBuilderSteps(prev => prev.map(s => 
-        s.id === configuringStep.id ? { ...s, config: tempConfigValue || 'Configured' } : s
+        s.id === configuringStep.id ? { ...s, config: finalConfig } : s
       ));
       setConfiguringStep(null);
     }
   };
 
-  // Drag and Drop Logic
-  const handleDragStart = (e: React.DragEvent, type: WorkflowStep['type'], label: string) => {
+  // --- Drag and Drop Logic ---
+
+  // Sidebar Drag Start
+  const handleSidebarDragStart = (e: React.DragEvent, type: WorkflowStep['type'], label: string) => {
+    e.dataTransfer.setData('dragSource', 'sidebar');
     e.dataTransfer.setData('stepType', type);
     e.dataTransfer.setData('stepLabel', label);
     e.dataTransfer.effectAllowed = 'copy';
     setIsDragging(true);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+  // Reorder Drag Start
+  const handleStepDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('dragSource', 'reorder');
+    setDraggedStepIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Optional: Set ghost image
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
-    const type = e.dataTransfer.getData('stepType') as WorkflowStep['type'];
-    const label = e.dataTransfer.getData('stepLabel');
-    
-    if (type && label) {
-        // Map label back to icon
-        let icon = GitMerge;
-        if (label === 'Webhook') icon = GitMerge;
-        else if (label === 'Schedule') icon = Clock;
-        else if (label === 'Alert') icon = AlertCircle;
-        else if (label === 'Deploy') icon = RefreshCw;
-        else if (label === 'Scale') icon = Server;
-        else if (label === 'Notify') icon = Bell;
+    if (draggedStepIndex !== null) {
+        e.dataTransfer.dropEffect = 'move';
+    } else {
+        e.dataTransfer.dropEffect = 'copy';
+    }
+  };
 
-        addToBuilder(type, label, icon);
+  // Drop on Canvas Background (Adds new item)
+  const handleCanvasDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const source = e.dataTransfer.getData('dragSource');
+    
+    if (source === 'sidebar') {
+      const type = e.dataTransfer.getData('stepType') as WorkflowStep['type'];
+      const label = e.dataTransfer.getData('stepLabel');
+      
+      if (type && label) {
+          let icon = GitMerge;
+          if (label === 'Webhook') icon = GitMerge;
+          else if (label === 'Schedule') icon = Clock;
+          else if (label === 'Alert') icon = AlertCircle;
+          else if (label === 'Deploy') icon = RefreshCw;
+          else if (label === 'Scale') icon = Server;
+          else if (label === 'Notify') icon = Bell;
+
+          addToBuilder(type, label, icon);
+      }
+    }
+  };
+
+  // Drop on specific step (Reorder)
+  const handleStepDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const source = e.dataTransfer.getData('dragSource');
+
+    if (source === 'reorder' && draggedStepIndex !== null) {
+      const newSteps = [...builderSteps];
+      const [movedStep] = newSteps.splice(draggedStepIndex, 1);
+      newSteps.splice(targetIndex, 0, movedStep);
+      setBuilderSteps(newSteps);
+      setDraggedStepIndex(null);
+    } 
+    // If dragging from sidebar onto a step, we could insert there, but let's stick to canvas drop for now to keep simple
+  };
+
+  // --- Dynamic Form Rendering ---
+  const renderConfigFields = () => {
+    if (!configuringStep) return null;
+
+    switch(configuringStep.label) {
+      case 'Webhook':
+        return (
+          <>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Method</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.method || 'POST'}
+                onChange={(e) => setConfigForm({...configForm, method: e.target.value})}
+              >
+                <option value="POST">POST</option>
+                <option value="GET">GET</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Endpoint URL</label>
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                placeholder="https://api.example.com/hooks/deploy"
+                value={configForm.url || ''}
+                onChange={(e) => setConfigForm({...configForm, url: e.target.value})}
+                autoFocus
+              />
+            </div>
+          </>
+        );
+      case 'Schedule':
+        return (
+          <>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Frequency</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.frequency || 'Daily'}
+                onChange={(e) => setConfigForm({...configForm, frequency: e.target.value})}
+              >
+                <option value="Hourly">Hourly</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Time (UTC)</label>
+              <input 
+                type="time" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.time || '00:00'}
+                onChange={(e) => setConfigForm({...configForm, time: e.target.value})}
+              />
+            </div>
+          </>
+        );
+      case 'Alert':
+        return (
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Metric</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.metric || 'CPU'}
+                onChange={(e) => setConfigForm({...configForm, metric: e.target.value})}
+              >
+                <option value="CPU">CPU Usage</option>
+                <option value="RAM">RAM Usage</option>
+                <option value="ErrorRate">Error Rate</option>
+                <option value="Latency">Latency</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Operator</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.operator || '>'}
+                onChange={(e) => setConfigForm({...configForm, operator: e.target.value})}
+              >
+                <option value=">">&gt; (Greater)</option>
+                <option value="<">&lt; (Less)</option>
+                <option value="=">= (Equal)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Threshold</label>
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                placeholder="80%"
+                value={configForm.threshold || ''}
+                onChange={(e) => setConfigForm({...configForm, threshold: e.target.value})}
+              />
+            </div>
+          </div>
+        );
+      case 'Deploy':
+        return (
+          <>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Target Environment</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.target || 'Production'}
+                onChange={(e) => setConfigForm({...configForm, target: e.target.value})}
+              >
+                <option value="Production">Production</option>
+                <option value="Staging">Staging</option>
+                <option value="Dev">Development</option>
+              </select>
+            </div>
+          </>
+        );
+      case 'Scale':
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Min Replicas</label>
+              <input 
+                type="number" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                placeholder="1"
+                value={configForm.min || ''}
+                onChange={(e) => setConfigForm({...configForm, min: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Max Replicas</label>
+              <input 
+                type="number" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                placeholder="5"
+                value={configForm.max || ''}
+                onChange={(e) => setConfigForm({...configForm, max: e.target.value})}
+              />
+            </div>
+          </div>
+        );
+      case 'Notify':
+        return (
+          <>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Channel</label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                value={configForm.channel || 'Email'}
+                onChange={(e) => setConfigForm({...configForm, channel: e.target.value})}
+              >
+                <option value="Email">Email</option>
+                <option value="Slack">Slack</option>
+                <option value="SMS">SMS</option>
+                <option value="PagerDuty">PagerDuty</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Destination</label>
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+                placeholder={configForm.channel === 'Slack' ? '#channel-name' : 'user@example.com'}
+                value={configForm.destination || ''}
+                onChange={(e) => setConfigForm({...configForm, destination: e.target.value})}
+              />
+            </div>
+          </>
+        );
+      default:
+        return (
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Value</label>
+            <input 
+              type="text" 
+              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm outline-none dark:text-white"
+              placeholder="Enter configuration..."
+              value={configForm.value || ''}
+              onChange={(e) => setConfigForm({...configForm, value: e.target.value})}
+              autoFocus
+            />
+          </div>
+        );
     }
   };
 
@@ -381,8 +625,7 @@ export const Automation: React.FC = () => {
                            const status = log?.status || 'idle';
                            const isRunning = status === 'running';
                            const isSuccess = status === 'success';
-                           const isPending = status === 'pending';
-
+                           
                            return (
                              <div key={step.id} className="flex flex-col items-center gap-2 relative group/step">
                                 <div className={`
@@ -511,7 +754,7 @@ export const Automation: React.FC = () => {
                             key={t.id}
                             onClick={() => addToBuilder('trigger', t.label, t.icon)}
                             draggable="true" 
-                            onDragStart={(e) => handleDragStart(e, 'trigger', t.label)}
+                            onDragStart={(e) => handleSidebarDragStart(e, 'trigger', t.label)}
                             className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-grab active:cursor-grabbing transition-colors group"
                           >
                              <t.icon size={16} className="text-amber-500" />
@@ -531,7 +774,7 @@ export const Automation: React.FC = () => {
                             key={a.id}
                             onClick={() => addToBuilder('action', a.label, a.icon)}
                             draggable="true" 
-                            onDragStart={(e) => handleDragStart(e, 'action', a.label)}
+                            onDragStart={(e) => handleSidebarDragStart(e, 'action', a.label)}
                             className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-neutral-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing transition-colors group"
                           >
                              <a.icon size={16} className="text-blue-500" />
@@ -545,12 +788,16 @@ export const Automation: React.FC = () => {
                  <div 
                     className={`flex-1 bg-gray-50/50 dark:bg-black/20 p-8 overflow-y-auto relative transition-colors ${isDragging ? 'bg-plasma-50/30 dark:bg-plasma-900/10' : ''}`}
                     onDragOver={handleDragOver}
-                    onDrop={handleDrop}
+                    onDrop={handleCanvasDrop}
                  >
                     <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-50"></div>
                     
                     {builderSteps.length === 0 ? (
-                       <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 dark:border-neutral-800 rounded-3xl m-4 transition-all p-4 text-center">
+                       <div 
+                          className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 dark:border-neutral-800 rounded-3xl m-4 transition-all p-4 text-center cursor-pointer hover:border-plasma-400 dark:hover:border-plasma-500/50"
+                          onDragOver={handleDragOver}
+                          onDrop={handleCanvasDrop}
+                       >
                           <Zap size={48} className={`mb-4 transition-transform duration-300 ${isDragging ? 'scale-110 text-plasma-500 animate-pulse' : 'opacity-20'}`} />
                           <p>{isDragging ? 'Drop here to start workflow' : 'Drag items from sidebar or tap to add'}</p>
                        </div>
@@ -565,6 +812,10 @@ export const Automation: React.FC = () => {
                                             : 'border-gray-200 dark:border-neutral-700 hover:border-plasma-400'
                                     }`}
                                     onClick={() => handleStepClick(step)}
+                                    draggable="true"
+                                    onDragStart={(e) => handleStepDragStart(e, index)}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={(e) => handleStepDrop(e, index)}
                                 >
                                    <div className="flex items-center gap-3">
                                       <div className="cursor-move text-gray-300 hover:text-gray-500"><GripVertical size={16} /></div>
@@ -590,7 +841,10 @@ export const Automation: React.FC = () => {
                                 </div>
                                 
                                 {index < builderSteps.length - 1 && (
-                                   <div className="h-6 w-0.5 bg-gray-300 dark:bg-neutral-700"></div>
+                                   <div className="flex flex-col items-center">
+                                       <div className="h-6 w-0.5 bg-gray-300 dark:bg-neutral-700"></div>
+                                       <ArrowDown size={14} className="text-gray-300 dark:text-neutral-700 -mt-2" />
+                                   </div>
                                 )}
                              </React.Fragment>
                           ))}
@@ -610,39 +864,18 @@ export const Automation: React.FC = () => {
                        <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6 animate-in zoom-in-95">
                            <div className="flex justify-between items-center mb-4">
                                <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                                   <Settings size={18} className="text-plasma-600"/> Configure Step
+                                   <Settings size={18} className="text-plasma-600"/> Configure {configuringStep.label}
                                </h3>
                                <button onClick={() => setConfiguringStep(null)}><X size={20} className="text-gray-400 hover:text-gray-600"/></button>
                            </div>
                            
                            <div className="space-y-4">
-                               <div>
-                                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Step Type</label>
-                                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                                       {configuringStep.label}
-                                   </div>
-                               </div>
-                               <div>
-                                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Configuration Parameter</label>
-                                   <input 
-                                       type="text" 
-                                       className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm focus:ring-2 focus:ring-plasma-500 outline-none dark:text-white"
-                                       placeholder={
-                                           configuringStep.label === 'Schedule' ? 'e.g. Every 24h' : 
-                                           configuringStep.label === 'Alert' ? 'e.g. CPU > 80%' : 
-                                           configuringStep.label === 'Notify' ? 'e.g. #alerts-channel' :
-                                           'Enter value...'
-                                       }
-                                       value={tempConfigValue}
-                                       onChange={(e) => setTempConfigValue(e.target.value)}
-                                       autoFocus
-                                   />
-                               </div>
+                               {renderConfigFields()}
                            </div>
 
                            <div className="mt-6 flex justify-end gap-2">
-                               <Button variant="secondary" size="sm" onClick={() => setConfiguringStep(null)}>Cancel</Button>
-                               <Button size="sm" onClick={saveStepConfig}>Save Configuration</Button>
+                               <Button variant="secondary" size="sm" onClick={() => setConfiguringStep(null)} className="dark:bg-neutral-800 dark:text-gray-300">Cancel</Button>
+                               <Button size="sm" onClick={saveStepConfig} className="shadow-lg shadow-plasma-500/20">Save Configuration</Button>
                            </div>
                        </div>
                    </div>
